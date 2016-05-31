@@ -92,11 +92,13 @@ public class MineSweeper extends Application {
                 row++;
             }
 
-            // Mise à jour des voisins
-            tile.setValue(getTileNeighbours(tile.getKey()));
-
             // ajouter la recherche des voisins pour mise à jour du modèle
             buttons.put(b, tile.getKey());
+        }
+        
+        for (Map.Entry<Tile, ArrayList<Tile>> tile : board.getTiles().entrySet()) {
+            // Mise à jour des voisins
+            tile.setValue(getTileNeighbours(tile.getKey()));
         }
 
         board.addObserver(new Observer() {
@@ -128,7 +130,7 @@ public class MineSweeper extends Application {
 
         border.setCenter(gPane);
 
-        Scene scene = new Scene(border, dimension * TILE_SIZE, dimension * TILE_SIZE * SCORE_ZONE_SIZE_COEF);
+        Scene scene = new Scene(border, (dimension + 1) * TILE_SIZE, (dimension + 1) * TILE_SIZE * SCORE_ZONE_SIZE_COEF);
 
         primaryStage.setTitle("Démineur");
         primaryStage.setScene(scene);
@@ -191,16 +193,17 @@ public class MineSweeper extends Application {
     }
 
     private Pair<Integer, Integer> getCoordinatesTile(Tile t) {
-        int x = 0;
-        int y = 0;
+        int i = 0;
+        int j = 0;
         for (ArrayList<Pair> al : grid) {
             for (Pair<Button, Tile> p : al) {
                 if (p.getValue() == t) {
-                    return new Pair<>(x, y);
+                    return new Pair<>(i, j);
                 }
-                x++;
+                i++;
             }
-            y++;
+            j++;
+            i=0;
         }
         return new Pair<>(-1, -1);
     }
@@ -216,6 +219,7 @@ public class MineSweeper extends Application {
                 i++;
             }
             j++;
+            i=0;
         }
         return null;
     }
@@ -223,11 +227,13 @@ public class MineSweeper extends Application {
     private ArrayList<Tile> getTileNeighbours(Tile t) {
         ArrayList<Tile> neighbours = new ArrayList<>();
         Pair<Integer, Integer> coord = getCoordinatesTile(t);
-        for (int i = -1; i < 2; i++) {
-            for (int j = -1; j < 2; j++) {
-                Tile currT = getTile(coord.getKey() + j, coord.getValue() + i);
-                if (!(i == 0 && j == 0)) {
-                    neighbours.add(t);
+        for (int j = -1; j < 2; j++) {
+            for (int i = -1; i < 2; i++) {
+                if (coord.getKey() + i >= 0 && coord.getValue() + j >= 0 && coord.getKey() + i < grid.size() && coord.getValue() + j < grid.get(0).size()) {
+                    Tile currT = getTile(coord.getKey() + i, coord.getValue() + j);
+                    if (!(i == 0 && j == 0)) {
+                        neighbours.add(currT);
+                    }
                 }
             }
         }
