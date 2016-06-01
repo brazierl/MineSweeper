@@ -52,12 +52,16 @@ public class Tile {
     public void clic(int action) {
         switch (action) {
             case Tile.DISCOVER:
+                this.flagged = false;
+                this.visible = true;
                 break;
             case Tile.FLAG:
-                this.flagged = true;
+                if(!this.visible)
+                    this.flagged = true;
                 break;
             default:
                 break;
         }
     }
+
 }

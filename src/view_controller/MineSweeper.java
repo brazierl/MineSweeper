@@ -15,16 +15,18 @@ import javafx.event.EventHandler;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.input.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
-import javafx.scene.input.*;
 import javafx.stage.Stage;
 import javafx.util.Pair;
 import model.Board;
 import model.Tile;
 
 /**
- *
+ * Vue/Contrôleur
  * @author p1509019
  */
 public class MineSweeper extends Application {
@@ -47,7 +49,7 @@ public class MineSweeper extends Application {
         int column = 0;
         int row = 0;
 
-        Board board = new Board(0.2);
+        Board board = new Board(0.15);
         int dimension = (int) Math.sqrt(board.getTiles().size()) - 1;
 
         // création des bouton et placement dans la grille
@@ -76,7 +78,6 @@ public class MineSweeper extends Application {
                     } // Left Clic
                     else if (event.getButton().equals(MouseButton.SECONDARY)) {
                         buttons.get(b).clic(Tile.FLAG);
-                        board.discover(buttons.get(b));
                     }
                     board.update();
                 }
@@ -109,14 +110,19 @@ public class MineSweeper extends Application {
                     Button b = getTileButton(t);
                     if (t.isVisible()) {
                         if (t.isTrapped()) {
-                            b.setStyle("-fx-background-color: orange;");
+                            Image imageMine = new Image("images/mine.png");
+                            b.setGraphic(new ImageView(imageMine));
                         } else {
-                            b.setText("" + t.getNbTrappedNeighbours());
+                            b.setGraphic(null);
+                            if(t.getNbTrappedNeighbours()!=0)
+                                b.setText("" + t.getNbTrappedNeighbours());
                         }
                         b.setDisable(true);
+                        b.setStyle("-fx-opacity: 1.0; -fx-background-color:rgb(245,245,245);");
                     }
                     if (t.isFlagged()) {
-                        b.setStyle("-fx-background-color: red;");
+                       Image imageFlag = new Image("images/flag.png");
+                       b.setGraphic(new ImageView(imageFlag));
                     }
 
                 }

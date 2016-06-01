@@ -51,16 +51,16 @@ public class Board extends Observable {
     }
 
     // Probleme sur la condition de visible...
-    public void discover(Tile tile) {
-        tile.setVisible(true);
-        
+    public void discover(Tile tile) {        
         for (Tile neighbour : tiles.get(tile)) {
             if (neighbour.isTrapped()) {
                 tile.setNbTrappedNeighbours(tile.getNbTrappedNeighbours() + 1);
             }
         }
+        
+        tile.setVisible(true);
 
-        if (tile.getNbTrappedNeighbours() == 0) {
+        if (tile.getNbTrappedNeighbours() == 0 && !tile.isTrapped()) {
             ArrayList<Tile> neighbours = tiles.get(tile);
             for (Tile neighbour : neighbours) {
                 if (!neighbour.isVisible()) {
