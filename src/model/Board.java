@@ -14,8 +14,10 @@ import java.util.*;
 public class Board extends Observable {
 
     private HashMap<Tile, ArrayList<Tile>> tiles;
+    private boolean containVisibleMine;
 
     public Board(double trappedTilesProportion) {
+        this.containVisibleMine = false;
         tiles = new HashMap<>();
         int width = 20;
         int length = 20;
@@ -31,7 +33,7 @@ public class Board extends Observable {
             }
         }
     }
-    
+
     public HashMap<Tile, ArrayList<Tile>> getTiles() {
         return tiles;
     }
@@ -50,14 +52,13 @@ public class Board extends Observable {
         return trappedTilesPositions;
     }
 
-    // Probleme sur la condition de visible...
-    public void discover(Tile tile) {        
+    public void discover(Tile tile) {
         for (Tile neighbour : tiles.get(tile)) {
             if (neighbour.isTrapped()) {
                 tile.setNbTrappedNeighbours(tile.getNbTrappedNeighbours() + 1);
             }
         }
-        
+
         tile.setVisible(true);
 
         if (tile.getNbTrappedNeighbours() == 0 && !tile.isTrapped()) {
@@ -69,10 +70,20 @@ public class Board extends Observable {
             }
         }
     }
-    
-    public void update(){
+
+    public void update() {
+        check();
+
         setChanged();
         notifyObservers();
+    }
+
+    private void check() {
+        for (Map.Entry<Tile, ArrayList<Tile>> tile : tiles.entrySet()) {
+            if (tile.getKey().isTrapped() && tile.getKey().isVisible()) {
+                containVisibleMine = true;
+            }
+        }
     }
 
 }

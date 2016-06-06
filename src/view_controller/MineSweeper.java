@@ -5,28 +5,44 @@
  */
 package view_controller;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Application;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import javafx.util.Pair;
 import model.Board;
 import model.Tile;
 
 /**
  * Vue/Contrôleur
+ *
  * @author p1509019
  */
 public class MineSweeper extends Application {
@@ -37,14 +53,22 @@ public class MineSweeper extends Application {
     private ArrayList<ArrayList<Pair>> grid;
     private GridPane gPane;
     private BorderPane border;
+    private GridPane gPaneScore;
+    private Label clock;
 
     @Override
     public void start(Stage primaryStage) {
-        // gestion du placement (permet de palcer le champ Text affichage en haut, et GridPane gPane au centre)
+        // gestion du placement (permet de placer les scores en haut, et GridPane gPane au centre)
         border = new BorderPane();
+        
+        // gestion du placement (permet de palcer les composants des scores)
+        gPaneScore = new GridPane();
 
         // permet de placer les diffrents boutons dans une grille
         gPane = new GridPane();
+
+        // horloge
+        clock = new Label();
 
         int column = 0;
         int row = 0;
@@ -71,15 +95,42 @@ public class MineSweeper extends Application {
             b.setOnMouseClicked(new EventHandler<MouseEvent>() {
                 @Override
                 public void handle(MouseEvent event) {
+                    // Création d'un pool de thread (dans le controleur ?)
+                    ExecutorService execute = Executors.newSingleThreadExecutor();
                     // Right Clic
                     if (event.getButton().equals(MouseButton.PRIMARY)) {
                         buttons.get(b).clic(Tile.DISCOVER);
-                        board.discover(buttons.get(b));
+
+                        Runnable rDisco = new Runnable() {
+                            @Override
+                            public void run() {
+                                board.discover(buttons.get(b));
+                                System.out.println("rDisco : thread " + Thread.currentThread().getName());
+                            }
+                        };
+
+                        execute.execute(rDisco);
                     } // Left Clic
                     else if (event.getButton().equals(MouseButton.SECONDARY)) {
-                        buttons.get(b).clic(Tile.FLAG);
+                        Runnable rFlag = new Runnable() {
+                            @Override
+                            public void run() {
+                                buttons.get(b).clic(Tile.FLAG);
+                                System.out.println("rFlag : thread " + Thread.currentThread().getName());
+                            }
+                        };
+
+                        execute.execute(rFlag);
                     }
-                    board.update();
+                    execute.shutdown();
+                    try {
+                        execute.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+                        System.out.println("Je suis le principal");
+                        board.update();
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(MineSweeper.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+
                 }
             });
 
@@ -96,7 +147,7 @@ public class MineSweeper extends Application {
             // ajouter la recherche des voisins pour mise à jour du modèle
             buttons.put(b, tile.getKey());
         }
-        
+
         for (Map.Entry<Tile, ArrayList<Tile>> tile : board.getTiles().entrySet()) {
             // Mise à jour des voisins
             tile.setValue(getTileNeighbours(tile.getKey()));
@@ -114,15 +165,16 @@ public class MineSweeper extends Application {
                             b.setGraphic(new ImageView(imageMine));
                         } else {
                             b.setGraphic(null);
-                            if(t.getNbTrappedNeighbours()!=0)
+                            if (t.getNbTrappedNeighbours() != 0) {
                                 b.setText("" + t.getNbTrappedNeighbours());
+                            }
                         }
                         b.setDisable(true);
                         b.setStyle("-fx-opacity: 1.0; -fx-background-color:rgb(245,245,245);");
                     }
                     if (t.isFlagged()) {
-                       Image imageFlag = new Image("images/flag.png");
-                       b.setGraphic(new ImageView(imageFlag));
+                        Image imageFlag = new Image("images/flag.png");
+                        b.setGraphic(new ImageView(imageFlag));
                     }
 
                 }
@@ -133,8 +185,35 @@ public class MineSweeper extends Application {
 
         gPane.setGridLinesVisible(true);
         gPane.setAlignment(Pos.BOTTOM_CENTER);
+        
+        // TimeLine gérant l'évolution de l'horloge
+        final Date startDate = new Date();
+        DateFormat dateFormat = new SimpleDateFormat("mm:ss");
+        final Timeline timeline = new Timeline(
+            new KeyFrame(Duration.seconds(1), 
+                new EventHandler<ActionEvent>() {
+                    @Override
+                    public void handle(ActionEvent event) {
+                        Date date = new Date(new Date().getTime() - startDate.getTime());;
+                        clock.setText(dateFormat.format(date));
+                    }
+                }
+            )
+        );
 
+        timeline.setCycleCount(Animation.INDEFINITE);
+        timeline.play();
+        
+        // Image 
+        ImageView emojiView = new ImageView("/images/flag.png");
+
+        gPaneScore.setAlignment(Pos.CENTER);
+        gPaneScore.setVgap(10);
+        gPaneScore.add(clock,0,0);
+        gPaneScore.add(emojiView,0,1);
+        
         border.setCenter(gPane);
+        border.setTop(gPaneScore);
 
         Scene scene = new Scene(border, (dimension + 1) * TILE_SIZE, (dimension + 1) * TILE_SIZE * SCORE_ZONE_SIZE_COEF);
 
@@ -209,7 +288,7 @@ public class MineSweeper extends Application {
                 i++;
             }
             j++;
-            i=0;
+            i = 0;
         }
         return new Pair<>(-1, -1);
     }
@@ -225,7 +304,7 @@ public class MineSweeper extends Application {
                 i++;
             }
             j++;
-            i=0;
+            i = 0;
         }
         return null;
     }
