@@ -33,11 +33,14 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
+import javafx.scene.text.Text;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
@@ -64,6 +67,8 @@ public class MineSweeper extends Application {
     private Timeline timeline;
     private Date startDate;
     private ImageView emojiView;
+    private Board board;
+    private DateFormat dateFormat;
 
     @Override
     public void start(Stage primaryStage) {
@@ -78,7 +83,7 @@ public class MineSweeper extends Application {
 
         // permet de placer les diffrents boutons dans une grille
         gPane = new GridPane();
-        
+
         // Création des menus
         initMenu();
 
@@ -88,7 +93,7 @@ public class MineSweeper extends Application {
         int column = 0;
         int row = 0;
 
-        Board board = new Board(0.15);
+        board = new Board(0.15);
         int dimension = (int) Math.sqrt(board.getTiles().size()) - 1;
 
         // création des bouton et placement dans la grille
@@ -177,7 +182,7 @@ public class MineSweeper extends Application {
                                 } else {
                                     if (t.getNbTrappedNeighbours() != 0) {
                                         b.setText("" + t.getNbTrappedNeighbours());
-                                        switch(t.getNbTrappedNeighbours()){
+                                        switch (t.getNbTrappedNeighbours()) {
                                             case 1:
                                                 break;
                                             case 2:
@@ -186,7 +191,7 @@ public class MineSweeper extends Application {
                                                 break;
                                             case 4:
                                                 break;
-                                                
+
                                         }
                                     }
                                 }
@@ -201,10 +206,9 @@ public class MineSweeper extends Application {
                                 gPane.setDisable(true);
                                 gPane.setStyle("-fx-opacity: 1.0;");
                                 timeline.stop();
-                                
+
                                 emojiView.setImage(new Image("/images/lost.jpg"));
-                                
-                                
+
                             }
                         }
                     }
@@ -219,7 +223,7 @@ public class MineSweeper extends Application {
 
         // TimeLine gérant l'évolution de l'horloge
         startDate = new Date();
-        DateFormat dateFormat = new SimpleDateFormat("mm:ss");
+        dateFormat = new SimpleDateFormat("mm:ss");
         timeline = new Timeline(
                 new KeyFrame(Duration.seconds(1),
                         new EventHandler<ActionEvent>() {
@@ -236,12 +240,11 @@ public class MineSweeper extends Application {
         timeline.play();
 
         // Image 
-        
         emojiView = new ImageView("/images/smiley.jpg");
-        HBox hbEmoji =new HBox();
+        HBox hbEmoji = new HBox();
         hbEmoji.getChildren().add(emojiView);
         hbEmoji.setAlignment(Pos.CENTER);
-                
+
         //Ajout des composants au gPane
         gPaneScore.setAlignment(Pos.CENTER);
         gPaneScore.setVgap(10);
@@ -250,7 +253,7 @@ public class MineSweeper extends Application {
 
         border.setBottom(gPane);
         border.setCenter(gPaneScore);
-        
+
         clock.setStyle("-fx-font-size: 30;");
 
         Scene scene = new Scene(border, (dimension + 1) * TILE_SIZE, (dimension + 1) * TILE_SIZE * SCORE_ZONE_SIZE_COEF);
@@ -370,12 +373,25 @@ public class MineSweeper extends Application {
         }
         return neighbours;
     }
-    private void initMenu(){
+
+    private void initMenu() {
         MenuBar menuBar = new MenuBar();
         Menu menuFile = new Menu("Fichier");
         MenuItem reset = new MenuItem("Recommencer");
         reset.setOnAction((ActionEvent t) -> {
-            System.err.println("recommencer");
+            board = new Board(0.15);
+            timeline = new Timeline(
+                    new KeyFrame(Duration.seconds(1),
+                            new EventHandler<ActionEvent>() {
+                                @Override
+                                public void handle(ActionEvent event) {
+                                    Date date = new Date(new Date().getTime() - startDate.getTime());;
+                                    clock.setText(dateFormat.format(date));
+                                }
+                            }
+                    )
+            );
+            board.update();
         });
         Menu game = new Menu("Partie");
         MenuItem nbMine = new MenuItem("Nombre de mines");
@@ -386,14 +402,36 @@ public class MineSweeper extends Application {
         gridSize.setOnAction((ActionEvent t) -> {
             System.err.println("taille grille");
         });
-        
-        game.getItems().addAll(nbMine,gridSize);
-        
+
+        game.getItems().addAll(nbMine, gridSize);
+
         menuFile.getItems().addAll(reset, game);
-        
+
         menuBar.getMenus().add(menuFile);
-        
+
         border.setTop(menuBar);
     }
-
+       
+    private void getPopupValues(Stage primaryStage, String... fields) {
+        final Stage dialog = new Stage();
+        dialog.initModality(Modality.APPLICATION_MODAL);
+        dialog.initOwner(primaryStage);
+        VBox dialogVbox = new VBox(20);
+        GridPane gpane = new GridPane();
+        gpane.setAlignment(Pos.CENTER);
+        int i = 0;
+        for (String f : fields) {
+            Text t = new Text(f);
+            TextField tf = new TextField();
+            gpane.add(t, 0, i);
+            gpane.add(tf, 1, i);
+            i++;
+        }
+        gpane.add(new Button("Ok"),1,i);
+        dialogVbox.getChildren().add(gpane);
+        dialogVbox.setAlignment(Pos.CENTER);
+        Scene dialogScene = new Scene(dialogVbox, 300, 200);
+        dialog.setScene(dialogScene);
+        dialog.show();
+    }
 }
