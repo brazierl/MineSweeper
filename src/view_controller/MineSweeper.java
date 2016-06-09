@@ -30,6 +30,9 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.*;
@@ -60,6 +63,7 @@ public class MineSweeper extends Application {
     private ExecutorService pool;
     private Timeline timeline;
     private Date startDate;
+    private ImageView emojiView;
 
     @Override
     public void start(Stage primaryStage) {
@@ -74,6 +78,9 @@ public class MineSweeper extends Application {
 
         // permet de placer les diffrents boutons dans une grille
         gPane = new GridPane();
+        
+        // Création des menus
+        initMenu();
 
         // horloge
         clock = new Label();
@@ -170,6 +177,17 @@ public class MineSweeper extends Application {
                                 } else {
                                     if (t.getNbTrappedNeighbours() != 0) {
                                         b.setText("" + t.getNbTrappedNeighbours());
+                                        switch(t.getNbTrappedNeighbours()){
+                                            case 1:
+                                                break;
+                                            case 2:
+                                                break;
+                                            case 3:
+                                                break;
+                                            case 4:
+                                                break;
+                                                
+                                        }
                                     }
                                 }
                                 b.setDisable(true);
@@ -182,13 +200,15 @@ public class MineSweeper extends Application {
                             if (board.isGameOver()) {
                                 gPane.setDisable(true);
                                 gPane.setStyle("-fx-opacity: 1.0;");
-
+                                timeline.stop();
+                                
+                                emojiView.setImage(new Image("/images/lost.jpg"));
+                                
+                                
                             }
                         }
                     }
-
                 });
-
             }
         });
 
@@ -216,16 +236,22 @@ public class MineSweeper extends Application {
         timeline.play();
 
         // Image 
-        ImageView emojiView = new ImageView("/images/flag.png");
-
+        
+        emojiView = new ImageView("/images/smiley.jpg");
+        HBox hbEmoji =new HBox();
+        hbEmoji.getChildren().add(emojiView);
+        hbEmoji.setAlignment(Pos.CENTER);
+                
         //Ajout des composants au gPane
         gPaneScore.setAlignment(Pos.CENTER);
         gPaneScore.setVgap(10);
         gPaneScore.add(clock, 0, 0);
-        gPaneScore.add(emojiView, 0, 1);
+        gPaneScore.add(hbEmoji, 0, 1);
 
-        border.setCenter(gPane);
-        border.setTop(gPaneScore);
+        border.setBottom(gPane);
+        border.setCenter(gPaneScore);
+        
+        clock.setStyle("-fx-font-size: 30;");
 
         Scene scene = new Scene(border, (dimension + 1) * TILE_SIZE, (dimension + 1) * TILE_SIZE * SCORE_ZONE_SIZE_COEF);
 
@@ -343,6 +369,31 @@ public class MineSweeper extends Application {
             }
         }
         return neighbours;
+    }
+    private void initMenu(){
+        MenuBar menuBar = new MenuBar();
+        Menu menuFile = new Menu("Fichier");
+        MenuItem reset = new MenuItem("Recommencer");
+        reset.setOnAction((ActionEvent t) -> {
+            System.err.println("recommencer");
+        });
+        Menu game = new Menu("Partie");
+        MenuItem nbMine = new MenuItem("Nombre de mines");
+        nbMine.setOnAction((ActionEvent t) -> {
+            System.err.println("Nb mines");
+        });
+        MenuItem gridSize = new MenuItem("Taille de la grille");
+        gridSize.setOnAction((ActionEvent t) -> {
+            System.err.println("taille grille");
+        });
+        
+        game.getItems().addAll(nbMine,gridSize);
+        
+        menuFile.getItems().addAll(reset, game);
+        
+        menuBar.getMenus().add(menuFile);
+        
+        border.setTop(menuBar);
     }
 
 }
