@@ -14,10 +14,10 @@ import java.util.*;
 public class Board extends Observable {
 
     private HashMap<Tile, ArrayList<Tile>> tiles;
-    private boolean containVisibleMine;
+    private boolean gameOver;
 
     public Board(double trappedTilesProportion) {
-        this.containVisibleMine = false;
+        this.gameOver = false;
         tiles = new HashMap<>();
         int width = 20;
         int length = 20;
@@ -35,7 +35,7 @@ public class Board extends Observable {
     }
     
     public Board(int nbTrappedTiles) {
-        this.containVisibleMine = false;
+        this.gameOver = false;
         tiles = new HashMap<>();
         int width = 20;
         int length = 20;
@@ -95,10 +95,14 @@ public class Board extends Observable {
         notifyObservers();
     }
 
+    public boolean isGameOver() {
+        return gameOver;
+    }
+
     private void check() {
         for (Map.Entry<Tile, ArrayList<Tile>> tile : tiles.entrySet()) {
             if (tile.getKey().isTrapped() && tile.getKey().isVisible()) {
-                containVisibleMine = true;
+                gameOver = true;
                 discoverTrappedTiles();
             }
         }

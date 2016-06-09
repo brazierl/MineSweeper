@@ -36,6 +36,7 @@ import javafx.scene.input.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 import javafx.util.Duration;
 import javafx.util.Pair;
 import model.Board;
@@ -57,6 +58,8 @@ public class MineSweeper extends Application {
     private GridPane gPaneScore;
     private Label clock;
     private ExecutorService pool;
+    private Timeline timeline;
+    private Date startDate;
 
     @Override
     public void start(Stage primaryStage) {
@@ -159,12 +162,12 @@ public class MineSweeper extends Application {
                         for (Map.Entry<Tile, ArrayList<Tile>> tile : board.getTiles().entrySet()) {
                             Tile t = tile.getKey();
                             Button b = getTileButton(t);
+                            b.setGraphic(null);
                             if (t.isVisible()) {
                                 if (t.isTrapped()) {
                                     Image imageMine = new Image("images/mine.png");
                                     b.setGraphic(new ImageView(imageMine));
                                 } else {
-                                    b.setGraphic(null);
                                     if (t.getNbTrappedNeighbours() != 0) {
                                         b.setText("" + t.getNbTrappedNeighbours());
                                     }
@@ -176,7 +179,11 @@ public class MineSweeper extends Application {
                                 Image imageFlag = new Image("images/flag.png");
                                 b.setGraphic(new ImageView(imageFlag));
                             }
+                            if (board.isGameOver()) {
+                                gPane.setDisable(true);
+                                gPane.setStyle("-fx-opacity: 1.0;");
 
+                            }
                         }
                     }
 
@@ -191,9 +198,9 @@ public class MineSweeper extends Application {
         gPane.setAlignment(Pos.BOTTOM_CENTER);
 
         // TimeLine gérant l'évolution de l'horloge
-        final Date startDate = new Date();
+        startDate = new Date();
         DateFormat dateFormat = new SimpleDateFormat("mm:ss");
-        final Timeline timeline = new Timeline(
+        timeline = new Timeline(
                 new KeyFrame(Duration.seconds(1),
                         new EventHandler<ActionEvent>() {
                             @Override
@@ -211,6 +218,7 @@ public class MineSweeper extends Application {
         // Image 
         ImageView emojiView = new ImageView("/images/flag.png");
 
+        //Ajout des composants au gPane
         gPaneScore.setAlignment(Pos.CENTER);
         gPaneScore.setVgap(10);
         gPaneScore.add(clock, 0, 0);
@@ -223,6 +231,14 @@ public class MineSweeper extends Application {
 
         primaryStage.setTitle("Démineur");
         primaryStage.setScene(scene);
+        primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+
+            @Override
+            public void handle(WindowEvent event) {
+                Platform.exit();
+                System.exit(0);
+            }
+        });
         primaryStage.show();
     }
 
