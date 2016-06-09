@@ -23,6 +23,7 @@ import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Pos;
@@ -55,12 +56,16 @@ public class MineSweeper extends Application {
     private BorderPane border;
     private GridPane gPaneScore;
     private Label clock;
+    private ExecutorService pool;
 
     @Override
     public void start(Stage primaryStage) {
+        // Création d'un pool de thread (dans le controleur ?)
+        pool = Executors.newFixedThreadPool(4);
+
         // gestion du placement (permet de placer les scores en haut, et GridPane gPane au centre)
         border = new BorderPane();
-        
+
         // gestion du placement (permet de palcer les composants des scores)
         gPaneScore = new GridPane();
 
@@ -84,10 +89,10 @@ public class MineSweeper extends Application {
             Button b = new Button();
             b.setMinSize(TILE_SIZE, TILE_SIZE);
             /*
-            final Text t = new Text();
-            t.setWrappingWidth(TILE_SIZE);
-            t.setFont(Font.font("Verdana", 20));
-            t.setTextAlignment(TextAlignment.CENTER);
+             final Text t = new Text();
+             t.setWrappingWidth(TILE_SIZE);
+             t.setFont(Font.font("Verdana", 20));
+             t.setTextAlignment(TextAlignment.CENTER);
              */
 
             gPane.add(b, column++, row);
@@ -95,8 +100,6 @@ public class MineSweeper extends Application {
             b.setOnMouseClicked(new EventHandler<MouseEvent>() {
                 @Override
                 public void handle(MouseEvent event) {
-                    // Création d'un pool de thread (dans le controleur ?)
-                    ExecutorService execute = Executors.newSingleThreadExecutor();
                     // Right Clic
                     if (event.getButton().equals(MouseButton.PRIMARY)) {
                         buttons.get(b).clic(Tile.DISCOVER);
@@ -106,10 +109,11 @@ public class MineSweeper extends Application {
                             public void run() {
                                 board.discover(buttons.get(b));
                                 System.out.println("rDisco : thread " + Thread.currentThread().getName());
+                                board.update();
                             }
                         };
 
-                        execute.execute(rDisco);
+                        pool.execute(rDisco);
                     } // Left Clic
                     else if (event.getButton().equals(MouseButton.SECONDARY)) {
                         Runnable rFlag = new Runnable() {
@@ -117,20 +121,12 @@ public class MineSweeper extends Application {
                             public void run() {
                                 buttons.get(b).clic(Tile.FLAG);
                                 System.out.println("rFlag : thread " + Thread.currentThread().getName());
+                                board.update();
                             }
                         };
 
-                        execute.execute(rFlag);
+                        pool.execute(rFlag);
                     }
-                    execute.shutdown();
-                    try {
-                        execute.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-                        System.out.println("Je suis le principal");
-                        board.update();
-                    } catch (InterruptedException ex) {
-                        Logger.getLogger(MineSweeper.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-
                 }
             });
 
@@ -156,28 +152,36 @@ public class MineSweeper extends Application {
         board.addObserver(new Observer() {
             @Override
             public void update(Observable o, Object arg) {
-                for (Map.Entry<Tile, ArrayList<Tile>> tile : board.getTiles().entrySet()) {
-                    Tile t = tile.getKey();
-                    Button b = getTileButton(t);
-                    if (t.isVisible()) {
-                        if (t.isTrapped()) {
-                            Image imageMine = new Image("images/mine.png");
-                            b.setGraphic(new ImageView(imageMine));
-                        } else {
-                            b.setGraphic(null);
-                            if (t.getNbTrappedNeighbours() != 0) {
-                                b.setText("" + t.getNbTrappedNeighbours());
+                Platform.runLater(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        for (Map.Entry<Tile, ArrayList<Tile>> tile : board.getTiles().entrySet()) {
+                            Tile t = tile.getKey();
+                            Button b = getTileButton(t);
+                            if (t.isVisible()) {
+                                if (t.isTrapped()) {
+                                    Image imageMine = new Image("images/mine.png");
+                                    b.setGraphic(new ImageView(imageMine));
+                                } else {
+                                    b.setGraphic(null);
+                                    if (t.getNbTrappedNeighbours() != 0) {
+                                        b.setText("" + t.getNbTrappedNeighbours());
+                                    }
+                                }
+                                b.setDisable(true);
+                                b.setStyle("-fx-opacity: 1.0; -fx-background-color:rgb(245,245,245);");
                             }
+                            if (t.isFlagged()) {
+                                Image imageFlag = new Image("images/flag.png");
+                                b.setGraphic(new ImageView(imageFlag));
+                            }
+
                         }
-                        b.setDisable(true);
-                        b.setStyle("-fx-opacity: 1.0; -fx-background-color:rgb(245,245,245);");
-                    }
-                    if (t.isFlagged()) {
-                        Image imageFlag = new Image("images/flag.png");
-                        b.setGraphic(new ImageView(imageFlag));
                     }
 
-                }
+                });
+
             }
         });
 
@@ -185,33 +189,33 @@ public class MineSweeper extends Application {
 
         gPane.setGridLinesVisible(true);
         gPane.setAlignment(Pos.BOTTOM_CENTER);
-        
+
         // TimeLine gérant l'évolution de l'horloge
         final Date startDate = new Date();
         DateFormat dateFormat = new SimpleDateFormat("mm:ss");
         final Timeline timeline = new Timeline(
-            new KeyFrame(Duration.seconds(1), 
-                new EventHandler<ActionEvent>() {
-                    @Override
-                    public void handle(ActionEvent event) {
-                        Date date = new Date(new Date().getTime() - startDate.getTime());;
-                        clock.setText(dateFormat.format(date));
-                    }
-                }
-            )
+                new KeyFrame(Duration.seconds(1),
+                        new EventHandler<ActionEvent>() {
+                            @Override
+                            public void handle(ActionEvent event) {
+                                Date date = new Date(new Date().getTime() - startDate.getTime());;
+                                clock.setText(dateFormat.format(date));
+                            }
+                        }
+                )
         );
 
         timeline.setCycleCount(Animation.INDEFINITE);
         timeline.play();
-        
+
         // Image 
         ImageView emojiView = new ImageView("/images/flag.png");
 
         gPaneScore.setAlignment(Pos.CENTER);
         gPaneScore.setVgap(10);
-        gPaneScore.add(clock,0,0);
-        gPaneScore.add(emojiView,0,1);
-        
+        gPaneScore.add(clock, 0, 0);
+        gPaneScore.add(emojiView, 0, 1);
+
         border.setCenter(gPane);
         border.setTop(gPaneScore);
 

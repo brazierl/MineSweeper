@@ -33,6 +33,23 @@ public class Board extends Observable {
             }
         }
     }
+    
+    public Board(int nbTrappedTiles) {
+        this.containVisibleMine = false;
+        tiles = new HashMap<>();
+        int width = 20;
+        int length = 20;
+        ArrayList<Integer> trappedTilesPositions = randomTrappedTilesPositons(nbTrappedTiles);
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < length; j++) {
+                if (trappedTilesPositions.contains(i * width + j)) {
+                    tiles.put(new Tile(true, false, 0, false), null);
+                } else {
+                    tiles.put(new Tile(false, false, 0, false), null);
+                }
+            }
+        }
+    }
 
     public HashMap<Tile, ArrayList<Tile>> getTiles() {
         return tiles;
@@ -82,7 +99,15 @@ public class Board extends Observable {
         for (Map.Entry<Tile, ArrayList<Tile>> tile : tiles.entrySet()) {
             if (tile.getKey().isTrapped() && tile.getKey().isVisible()) {
                 containVisibleMine = true;
+                discoverTrappedTiles();
             }
+        }
+    }
+    
+    private void discoverTrappedTiles() {
+        ArrayList<Tile> trappedTiles = new ArrayList<>();
+        for (Map.Entry<Tile, ArrayList<Tile>> tile : tiles.entrySet()){
+            if (tile.getKey().isTrapped()) tile.getKey().setVisible(true);
         }
     }
 

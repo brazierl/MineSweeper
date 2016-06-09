@@ -58,6 +58,8 @@ public class Tile {
             case Tile.FLAG:
                 if(!this.visible)
                     this.flagged = true;
+                else
+                    this.flagged = false;
                 break;
             default:
                 break;
