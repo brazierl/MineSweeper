@@ -68,194 +68,74 @@ public class MineSweeper extends Application {
     private Date startDate;
     private ImageView emojiView;
     private Board board;
-    private DateFormat dateFormat;
 
     @Override
     public void start(Stage primaryStage) {
         // Création d'un pool de thread (dans le controleur ?)
         pool = Executors.newFixedThreadPool(4);
 
-        // gestion du placement (permet de placer les scores en haut, et GridPane gPane au centre)
-        border = new BorderPane();
-
-        // gestion du placement (permet de palcer les composants des scores)
-        gPaneScore = new GridPane();
-
-        // permet de placer les diffrents boutons dans une grille
-        gPane = new GridPane();
-
-        // Création des menus
-        initMenu();
-
-        // horloge
-        clock = new Label();
-
-        int column = 0;
-        int row = 0;
-
-        board = new Board(0.15);
-        int dimension = (int) Math.sqrt(board.getTiles().size()) - 1;
-
-        // création des bouton et placement dans la grille
-        buttons = new HashMap<>();
-        ArrayList<Pair> rowList = new ArrayList<>();
-        grid = new ArrayList<>();
-        for (Map.Entry<Tile, ArrayList<Tile>> tile : board.getTiles().entrySet()) {
-            Button b = new Button();
-            b.setMinSize(TILE_SIZE, TILE_SIZE);
-            /*
-             final Text t = new Text();
-             t.setWrappingWidth(TILE_SIZE);
-             t.setFont(Font.font("Verdana", 20));
-             t.setTextAlignment(TextAlignment.CENTER);
-             */
-
-            gPane.add(b, column++, row);
-
-            b.setOnMouseClicked(new EventHandler<MouseEvent>() {
-                @Override
-                public void handle(MouseEvent event) {
-                    // Right Clic
-                    if (event.getButton().equals(MouseButton.PRIMARY)) {
-                        buttons.get(b).clic(Tile.DISCOVER);
-
-                        Runnable rDisco = new Runnable() {
-                            @Override
-                            public void run() {
-                                board.discover(buttons.get(b));
-                                System.out.println("rDisco : thread " + Thread.currentThread().getName());
-                                board.update();
-                            }
-                        };
-
-                        pool.execute(rDisco);
-                    } // Left Clic
-                    else if (event.getButton().equals(MouseButton.SECONDARY)) {
-                        Runnable rFlag = new Runnable() {
-                            @Override
-                            public void run() {
-                                buttons.get(b).clic(Tile.FLAG);
-                                System.out.println("rFlag : thread " + Thread.currentThread().getName());
-                                board.update();
-                            }
-                        };
-
-                        pool.execute(rFlag);
-                    }
-                }
-            });
-
-            Pair<Button, Tile> couple = new Pair<>(b, tile.getKey());
-            rowList.add(couple);
-
-            if (column > dimension) {
-                grid.add(rowList);
-                rowList = new ArrayList<>();
-                column = 0;
-                row++;
-            }
-
-            // ajouter la recherche des voisins pour mise à jour du modèle
-            buttons.put(b, tile.getKey());
-        }
-
-        for (Map.Entry<Tile, ArrayList<Tile>> tile : board.getTiles().entrySet()) {
-            // Mise à jour des voisins
-            tile.setValue(getTileNeighbours(tile.getKey()));
-        }
+        // Initiation du jeu avec une board et le timer
+        initGame();
 
         board.addObserver(new Observer() {
             @Override
             public void update(Observable o, Object arg) {
-                Platform.runLater(new Runnable() {
+                for (Map.Entry<Tile, ArrayList<Tile>> tile : board.getTiles().entrySet()) {
+                    Tile t = tile.getKey();
+                    Button b = getTileButton(t);
+                    b.setGraphic(null);
+                    if (t.isVisible()) {
+                        if (t.isTrapped()) {
+                            Image imageMine = new Image("images/mine.png");
+                            b.setGraphic(new ImageView(imageMine));
+                        } else {
+                            if (t.getNbTrappedNeighbours() != 0) {
+                                b.setText("" + t.getNbTrappedNeighbours());
+                                switch (t.getNbTrappedNeighbours()) {
+                                    case 1: 
+                                        System.out.println("1");
+                                        b.setStyle("-fx-text-fill: blue;");
+                                        break;
+                                    case 2: 
+                                        System.out.println("2");
+                                        b.setStyle("-fx-text-fill: green;");
+                                        break;
+                                    case 3: 
+                                        System.out.println("3");
+                                        b.setStyle("-fx-text-fill: red;");
+                                        break;
+                                    case 4: 
+                                        System.out.println("4");
+                                        b.setStyle("-fx-text-fill: dark-blue;");
+                                        break;
+                                    default:
+                                        System.out.println("autre");
+                                        b.setStyle("-fx-text-fill: brown;");
+                                        break;
 
-                    @Override
-                    public void run() {
-                        for (Map.Entry<Tile, ArrayList<Tile>> tile : board.getTiles().entrySet()) {
-                            Tile t = tile.getKey();
-                            Button b = getTileButton(t);
-                            b.setGraphic(null);
-                            if (t.isVisible()) {
-                                if (t.isTrapped()) {
-                                    Image imageMine = new Image("images/mine.png");
-                                    b.setGraphic(new ImageView(imageMine));
-                                } else {
-                                    if (t.getNbTrappedNeighbours() != 0) {
-                                        b.setText("" + t.getNbTrappedNeighbours());
-                                        switch (t.getNbTrappedNeighbours()) {
-                                            case 1:
-                                                break;
-                                            case 2:
-                                                break;
-                                            case 3:
-                                                break;
-                                            case 4:
-                                                break;
-
-                                        }
-                                    }
                                 }
-                                b.setDisable(true);
-                                b.setStyle("-fx-opacity: 1.0; -fx-background-color:rgb(245,245,245);");
-                            }
-                            if (t.isFlagged()) {
-                                Image imageFlag = new Image("images/flag.png");
-                                b.setGraphic(new ImageView(imageFlag));
-                            }
-                            if (board.isGameOver()) {
-                                gPane.setDisable(true);
-                                gPane.setStyle("-fx-opacity: 1.0;");
-                                timeline.stop();
-
-                                emojiView.setImage(new Image("/images/lost.jpg"));
-
                             }
                         }
+                        b.setDisable(true);
+                        b.setStyle("-fx-opacity: 1.0; -fx-background-color:rgb(245,245,245);");
                     }
-                });
+                    if (t.isFlagged()) {
+                        Image imageFlag = new Image("images/flag.png");
+                        b.setGraphic(new ImageView(imageFlag));
+                    }
+                    if (board.isGameOver()) {
+                        gPane.setDisable(true);
+                        gPane.setStyle("-fx-opacity: 1.0;");
+                        timeline.stop();
+
+                        emojiView.setImage(new Image("/images/lost.jpg"));
+
+                    }
+                }
             }
         });
 
-        board.update();
-
-        gPane.setGridLinesVisible(true);
-        gPane.setAlignment(Pos.BOTTOM_CENTER);
-
-        // TimeLine gérant l'évolution de l'horloge
-        startDate = new Date();
-        dateFormat = new SimpleDateFormat("mm:ss");
-        timeline = new Timeline(
-                new KeyFrame(Duration.seconds(1),
-                        new EventHandler<ActionEvent>() {
-                            @Override
-                            public void handle(ActionEvent event) {
-                                Date date = new Date(new Date().getTime() - startDate.getTime());;
-                                clock.setText(dateFormat.format(date));
-                            }
-                        }
-                )
-        );
-
-        timeline.setCycleCount(Animation.INDEFINITE);
-        timeline.play();
-
-        // Image 
-        emojiView = new ImageView("/images/smiley.jpg");
-        HBox hbEmoji = new HBox();
-        hbEmoji.getChildren().add(emojiView);
-        hbEmoji.setAlignment(Pos.CENTER);
-
-        //Ajout des composants au gPane
-        gPaneScore.setAlignment(Pos.CENTER);
-        gPaneScore.setVgap(10);
-        gPaneScore.add(clock, 0, 0);
-        gPaneScore.add(hbEmoji, 0, 1);
-
-        border.setBottom(gPane);
-        border.setCenter(gPaneScore);
-
-        clock.setStyle("-fx-font-size: 30;");
-
+        int dimension = (int) Math.sqrt(board.getTiles().size()) - 1;
         Scene scene = new Scene(border, (dimension + 1) * TILE_SIZE, (dimension + 1) * TILE_SIZE * SCORE_ZONE_SIZE_COEF);
 
         primaryStage.setTitle("Démineur");
@@ -379,19 +259,7 @@ public class MineSweeper extends Application {
         Menu menuFile = new Menu("Fichier");
         MenuItem reset = new MenuItem("Recommencer");
         reset.setOnAction((ActionEvent t) -> {
-            board = new Board(0.15);
-            timeline = new Timeline(
-                    new KeyFrame(Duration.seconds(1),
-                            new EventHandler<ActionEvent>() {
-                                @Override
-                                public void handle(ActionEvent event) {
-                                    Date date = new Date(new Date().getTime() - startDate.getTime());;
-                                    clock.setText(dateFormat.format(date));
-                                }
-                            }
-                    )
-            );
-            board.update();
+            initGame();
         });
         Menu game = new Menu("Partie");
         MenuItem nbMine = new MenuItem("Nombre de mines");
@@ -411,7 +279,7 @@ public class MineSweeper extends Application {
 
         border.setTop(menuBar);
     }
-       
+
     private void getPopupValues(Stage primaryStage, String... fields) {
         final Stage dialog = new Stage();
         dialog.initModality(Modality.APPLICATION_MODAL);
@@ -427,11 +295,151 @@ public class MineSweeper extends Application {
             gpane.add(tf, 1, i);
             i++;
         }
-        gpane.add(new Button("Ok"),1,i);
+        gpane.add(new Button("Ok"), 1, i);
         dialogVbox.getChildren().add(gpane);
         dialogVbox.setAlignment(Pos.CENTER);
         Scene dialogScene = new Scene(dialogVbox, 300, 200);
         dialog.setScene(dialogScene);
         dialog.show();
+    }
+
+    private void initGame() {
+        // gestion du placement (permet de placer les scores en haut, et GridPane gPane au centre)
+        border = new BorderPane();
+
+        // gestion du placement (permet de palcer les composants des scores)
+        gPaneScore = new GridPane();
+
+        // permet de placer les diffrents boutons dans une grille
+        gPane = new GridPane();
+
+        // horloge
+        clock = new Label();
+
+        board = new Board(0.15);
+
+        // TimeLine gérant l'évolution de l'horloge
+        startDate = new Date();
+        DateFormat dateFormat = new SimpleDateFormat("mm:ss");
+        timeline = new Timeline(
+                new KeyFrame(Duration.seconds(1),
+                        new EventHandler<ActionEvent>() {
+                            @Override
+                            public void handle(ActionEvent event) {
+                                Date date = new Date(new Date().getTime() - startDate.getTime());;
+                                clock.setText(dateFormat.format(date));
+                            }
+                        }
+                )
+        );
+
+        timeline.setCycleCount(Animation.INDEFINITE);
+        timeline.play();
+
+        // Création des menus
+        initMenu();
+        
+        // initialisation de la grille graphique
+        initGrid();
+        
+        board.update();
+    }
+
+    private void initGrid() {
+        int column = 0;
+        int row = 0;
+
+        int dimension = (int) Math.sqrt(board.getTiles().size()) - 1;
+
+        // création des bouton et placement dans la grille
+        buttons = new HashMap<>();
+        ArrayList<Pair> rowList = new ArrayList<>();
+        grid = new ArrayList<>();
+        for (Map.Entry<Tile, ArrayList<Tile>> tile : board.getTiles().entrySet()) {
+            Button b = new Button();
+            b.setMinSize(TILE_SIZE, TILE_SIZE);
+
+            gPane.add(b, column++, row);
+
+            b.setOnMouseClicked(new EventHandler<MouseEvent>() {
+                @Override
+                public void handle(MouseEvent event) {
+                    // Right Clic
+                    if (event.getButton().equals(MouseButton.PRIMARY)) {
+                        buttons.get(b).clic(Tile.DISCOVER);
+
+                        Runnable rDisco = new Runnable() {
+                            @Override
+                            public void run() {
+                                board.discover(buttons.get(b));
+                                System.out.println("rDisco : thread " + Thread.currentThread().getName());
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        board.update();
+                                    }
+                                });
+                            }
+                        };
+
+                        pool.execute(rDisco);
+                    } // Left Clic
+                    else if (event.getButton().equals(MouseButton.SECONDARY)) {
+                        Runnable rFlag = new Runnable() {
+                            @Override
+                            public void run() {
+                                buttons.get(b).clic(Tile.FLAG);
+                                System.out.println("rFlag : thread " + Thread.currentThread().getName());
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        board.update();
+                                    }
+                                });
+                            }
+                        };
+
+                        pool.execute(rFlag);
+                    }
+                }
+            });
+
+            Pair<Button, Tile> couple = new Pair<>(b, tile.getKey());
+            rowList.add(couple);
+
+            if (column > dimension) {
+                grid.add(rowList);
+                rowList = new ArrayList<>();
+                column = 0;
+                row++;
+            }
+
+            // ajouter la recherche des voisins pour mise à jour du modèle
+            buttons.put(b, tile.getKey());
+        }
+
+        for (Map.Entry<Tile, ArrayList<Tile>> tile : board.getTiles().entrySet()) {
+            // Mise à jour des voisins
+            tile.setValue(getTileNeighbours(tile.getKey()));
+        }
+        gPane.setGridLinesVisible(true);
+        gPane.setAlignment(Pos.BOTTOM_CENTER);
+
+        // Image 
+        emojiView = new ImageView("/images/smiley.jpg");
+        HBox hbEmoji = new HBox();
+        hbEmoji.getChildren().add(emojiView);
+        hbEmoji.setAlignment(Pos.CENTER);
+
+        //Ajout des composants au gPane
+        gPaneScore.setAlignment(Pos.CENTER);
+        gPaneScore.setVgap(10);
+        gPaneScore.add(clock, 0, 0);
+        gPaneScore.add(hbEmoji, 0, 1);
+
+        border.setBottom(gPane);
+        border.setCenter(gPaneScore);
+
+        clock.setStyle("-fx-font-size: 30;");
     }
 }
