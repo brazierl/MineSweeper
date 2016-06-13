@@ -8,7 +8,6 @@ package view_controller;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -16,9 +15,6 @@ import java.util.Observable;
 import java.util.Observer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -26,7 +22,9 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -56,7 +54,6 @@ import model.Tile;
 public class MineSweeper extends Application {
 
     private static final int TILE_SIZE = 30;
-    private static final double SCORE_ZONE_SIZE_COEF = 1.2;
     private HashMap<Button, Tile> buttons;
     private ArrayList<ArrayList<Pair>> grid;
     private GridPane gPane;
@@ -68,86 +65,33 @@ public class MineSweeper extends Application {
     private Date startDate;
     private ImageView emojiView;
     private Board board;
+    private Scene scene;
+    private int width;
+    private int height;
 
     @Override
     public void start(Stage primaryStage) {
         // Création d'un pool de thread (dans le controleur ?)
         pool = Executors.newFixedThreadPool(4);
 
+        // gestion du placement (permet de placer les scores en haut, et GridPane gPane au centre)
+        border = new BorderPane();
+
         // Initiation du jeu avec une board et le timer
-        initGame();
+        initGame(primaryStage, 0, 5, 5);
 
-        board.addObserver(new Observer() {
-            @Override
-            public void update(Observable o, Object arg) {
-                for (Map.Entry<Tile, ArrayList<Tile>> tile : board.getTiles().entrySet()) {
-                    Tile t = tile.getKey();
-                    Button b = getTileButton(t);
-                    b.setGraphic(null);
-                    if (t.isVisible()) {
-                        if (t.isTrapped()) {
-                            Image imageMine = new Image("images/mine.png");
-                            b.setGraphic(new ImageView(imageMine));
-                        } else {
-                            if (t.getNbTrappedNeighbours() != 0) {
-                                b.setText("" + t.getNbTrappedNeighbours());
-                                switch (t.getNbTrappedNeighbours()) {
-                                    case 1: 
-                                        System.out.println("1");
-                                        b.setStyle("-fx-text-fill: blue;");
-                                        break;
-                                    case 2: 
-                                        System.out.println("2");
-                                        b.setStyle("-fx-text-fill: green;");
-                                        break;
-                                    case 3: 
-                                        System.out.println("3");
-                                        b.setStyle("-fx-text-fill: red;");
-                                        break;
-                                    case 4: 
-                                        System.out.println("4");
-                                        b.setStyle("-fx-text-fill: dark-blue;");
-                                        break;
-                                    default:
-                                        System.out.println("autre");
-                                        b.setStyle("-fx-text-fill: brown;");
-                                        break;
-
-                                }
-                            }
-                        }
-                        b.setDisable(true);
-                        b.setStyle("-fx-opacity: 1.0; -fx-background-color:rgb(245,245,245);");
-                    }
-                    if (t.isFlagged()) {
-                        Image imageFlag = new Image("images/flag.png");
-                        b.setGraphic(new ImageView(imageFlag));
-                    }
-                    if (board.isGameOver()) {
-                        gPane.setDisable(true);
-                        gPane.setStyle("-fx-opacity: 1.0;");
-                        timeline.stop();
-
-                        emojiView.setImage(new Image("/images/lost.jpg"));
-
-                    }
-                }
-            }
-        });
-
-        int dimension = (int) Math.sqrt(board.getTiles().size()) - 1;
-        Scene scene = new Scene(border, (dimension + 1) * TILE_SIZE, (dimension + 1) * TILE_SIZE * SCORE_ZONE_SIZE_COEF);
-
+        scene = new Scene(border);
+        
         primaryStage.setTitle("Démineur");
         primaryStage.setScene(scene);
         primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
-
             @Override
             public void handle(WindowEvent event) {
                 Platform.exit();
                 System.exit(0);
             }
         });
+        primaryStage.setResizable(false);
         primaryStage.show();
     }
 
@@ -177,8 +121,7 @@ public class MineSweeper extends Application {
 
     /**
      *
-     * @param b
-     * @return
+     * @param @return
      */
     private Button getTileButton(Tile t) {
         for (ArrayList<Pair> al : grid) {
@@ -254,21 +197,22 @@ public class MineSweeper extends Application {
         return neighbours;
     }
 
-    private void initMenu() {
+    private void initMenu(Stage primaryStage) {
         MenuBar menuBar = new MenuBar();
         Menu menuFile = new Menu("Fichier");
         MenuItem reset = new MenuItem("Recommencer");
         reset.setOnAction((ActionEvent t) -> {
-            initGame();
+            initGame(primaryStage, 0, 0, 0);
         });
         Menu game = new Menu("Partie");
         MenuItem nbMine = new MenuItem("Nombre de mines");
         nbMine.setOnAction((ActionEvent t) -> {
-            System.err.println("Nb mines");
+            initGame(primaryStage, getPopupValues(primaryStage, "Nombre de mines : ")[0], 0, 0);
         });
         MenuItem gridSize = new MenuItem("Taille de la grille");
         gridSize.setOnAction((ActionEvent t) -> {
-            System.err.println("taille grille");
+            int[] res = getPopupValues(primaryStage, "Entrez la hauteur : ", "Entrez la largeur : ");
+            initGame(primaryStage, board.getNbTrappedTiles(), res[0], res[1]);
         });
 
         game.getItems().addAll(nbMine, gridSize);
@@ -280,12 +224,15 @@ public class MineSweeper extends Application {
         border.setTop(menuBar);
     }
 
-    private void getPopupValues(Stage primaryStage, String... fields) {
+    private int[] getPopupValues(Stage primaryStage, String... fields) {
         final Stage dialog = new Stage();
+        int[] res = new int[fields.length];
         dialog.initModality(Modality.APPLICATION_MODAL);
         dialog.initOwner(primaryStage);
         VBox dialogVbox = new VBox(20);
         GridPane gpane = new GridPane();
+        gpane.setHgap(10);
+        gpane.setVgap(10);
         gpane.setAlignment(Pos.CENTER);
         int i = 0;
         for (String f : fields) {
@@ -295,18 +242,31 @@ public class MineSweeper extends Application {
             gpane.add(tf, 1, i);
             i++;
         }
-        gpane.add(new Button("Ok"), 1, i);
+        Button b = new Button("Ok");
+        b.setOnMouseClicked(new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent event) {
+                int j = 0;
+                for (Node n : gpane.getChildren()) {
+                    if (n instanceof TextField) {
+                        res[j] = Integer.parseInt(((TextField) n).getText());
+                        j++;
+                    }
+                }
+                dialog.close();
+            }
+        });
+        gpane.add(b, 1, i);
         dialogVbox.getChildren().add(gpane);
         dialogVbox.setAlignment(Pos.CENTER);
         Scene dialogScene = new Scene(dialogVbox, 300, 200);
         dialog.setScene(dialogScene);
-        dialog.show();
+        dialog.showAndWait();
+        return res;
     }
 
-    private void initGame() {
-        // gestion du placement (permet de placer les scores en haut, et GridPane gPane au centre)
-        border = new BorderPane();
-
+    private void initGame(Stage primaryStage, int nbTrappedCells, int width, int height) {
+        
         // gestion du placement (permet de palcer les composants des scores)
         gPaneScore = new GridPane();
 
@@ -316,7 +276,22 @@ public class MineSweeper extends Application {
         // horloge
         clock = new Label();
 
-        board = new Board(0.15);
+        if (width == 0 || height == 0) {
+            width = this.width;
+            height = this.height;
+        } else {
+            this.width = width;
+            this.height = height;
+        }
+        
+        primaryStage.setWidth((width + 1) * TILE_SIZE);
+        primaryStage.setHeight((height + 5) * TILE_SIZE);
+
+        if (nbTrappedCells != 0) {
+            board = new Board(width, height, (int) nbTrappedCells);
+        } else {
+            board = new Board(width, height, Board.TRAPPED_TILES_PROP);
+        }
 
         // TimeLine gérant l'évolution de l'horloge
         startDate = new Date();
@@ -324,12 +299,12 @@ public class MineSweeper extends Application {
         timeline = new Timeline(
                 new KeyFrame(Duration.seconds(1),
                         new EventHandler<ActionEvent>() {
-                            @Override
-                            public void handle(ActionEvent event) {
-                                Date date = new Date(new Date().getTime() - startDate.getTime());;
-                                clock.setText(dateFormat.format(date));
-                            }
-                        }
+                    @Override
+                    public void handle(ActionEvent event) {
+                        Date date = new Date(new Date().getTime() - startDate.getTime());;
+                        clock.setText(dateFormat.format(date));
+                    }
+                }
                 )
         );
 
@@ -337,11 +312,14 @@ public class MineSweeper extends Application {
         timeline.play();
 
         // Création des menus
-        initMenu();
-        
+        initMenu(primaryStage);
+
         // initialisation de la grille graphique
         initGrid();
-        
+
+        // initialisation de l'observer pour mettre à jour l'affichage
+        initObserver();
+
         board.update();
     }
 
@@ -361,6 +339,22 @@ public class MineSweeper extends Application {
 
             gPane.add(b, column++, row);
 
+            // évolution du smiley lors d'un clic
+            /*b.setOnMousePressed(new EventHandler<MouseEvent>() {
+                @Override
+                public void handle(MouseEvent event) {
+                    emojiView = new ImageView("/images/Clic.PNG");
+                    board.update();
+                }
+            });
+
+            b.setOnMouseReleased(new EventHandler<MouseEvent>() {
+                @Override
+                public void handle(MouseEvent event) {
+                    emojiView = new ImageView("/images/smiley.PNG");
+                    board.update();
+                }
+            });*/
             b.setOnMouseClicked(new EventHandler<MouseEvent>() {
                 @Override
                 public void handle(MouseEvent event) {
@@ -426,7 +420,9 @@ public class MineSweeper extends Application {
         gPane.setAlignment(Pos.BOTTOM_CENTER);
 
         // Image 
-        emojiView = new ImageView("/images/smiley.jpg");
+        emojiView = new ImageView("/images/smiley.PNG");
+        emojiView.setFitHeight(TILE_SIZE);
+        emojiView.setFitWidth(TILE_SIZE);
         HBox hbEmoji = new HBox();
         hbEmoji.getChildren().add(emojiView);
         hbEmoji.setAlignment(Pos.CENTER);
@@ -440,6 +436,64 @@ public class MineSweeper extends Application {
         border.setBottom(gPane);
         border.setCenter(gPaneScore);
 
-        clock.setStyle("-fx-font-size: 30;");
+        clock.setStyle("-fx-font-size: " + TILE_SIZE + ";");
+    }
+
+    private void initObserver() {
+        board.addObserver(new Observer() {
+            @Override
+            public void update(Observable o, Object arg) {
+                for (Map.Entry<Tile, ArrayList<Tile>> tile : board.getTiles().entrySet()) {
+                    Tile t = tile.getKey();
+                    Button b = getTileButton(t);
+                    b.setGraphic(null);
+                    if (t.isVisible()) {
+                        if (t.isTrapped()) {
+                            Image imageMine = new Image("images/mine.png");
+                            b.setGraphic(new ImageView(imageMine));
+                            b.setStyle("-fx-opacity: 1.0; -fx-background-color: rgb(245,245,245);");
+                        } else if (t.getNbTrappedNeighbours() != 0) {
+                            b.setText("" + t.getNbTrappedNeighbours());
+                            b.setDisable(true);
+                            String style = "-fx-opacity: 1.0; -fx-background-color: rgb(245,245,245); -fx-font-weight: bold;  -fx-text-fill: ";
+                            switch (t.getNbTrappedNeighbours()) {
+                                case 1:
+                                    b.setStyle(style + "blue;");
+                                    break;
+                                case 2:
+                                    b.setStyle(style + "green;");
+                                    break;
+                                case 3:
+                                    b.setStyle(style + "red;");
+                                    break;
+                                case 4:
+                                    b.setStyle(style + "midnightblue;");
+                                    break;
+                                default:
+                                    b.setStyle(style + "brown;");
+                                    break;
+                            }
+                        } else {
+                            b.setDisable(true);
+                            b.setStyle("-fx-background-color: rgb(245,245,245);");
+                        }
+                    }
+                    if (t.isFlagged()) {
+                        Image imageFlag = new Image("images/flag.png");
+                        b.setGraphic(new ImageView(imageFlag));
+                    }
+                    if (board.isGameOver()) {
+                        gPane.setDisable(true);
+                        gPane.setStyle("-fx-opacity: 1.0;");
+                        timeline.stop();
+                        if (board.isWin()) {
+                            emojiView.setImage(new Image("/images/victory.PNG"));
+                        } else {
+                            emojiView.setImage(new Image("/images/lost.PNG"));
+                        }
+                    }
+                }
+            }
+        });
     }
 }

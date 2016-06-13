@@ -13,38 +13,46 @@ import java.util.*;
  */
 public class Board extends Observable {
 
+    public static final double TRAPPED_TILES_PROP = 0.15;
     private HashMap<Tile, ArrayList<Tile>> tiles;
     private boolean gameOver;
+    private boolean win;
+    private int nbTrappedTiles;
+    private int nbFreeTiles;
 
-    public Board(double trappedTilesProportion) {
+    public Board(int length, int width, double trappedTilesProportion) {
+        this.nbTrappedTiles = 0;
+        this.nbFreeTiles = 0;
         this.gameOver = false;
-        tiles = new HashMap<>();
-        int width = 20;
-        int length = 20;
+        this.win = false;
+        this.tiles = new HashMap<>();
         int nbTrappedTiles = (int) Math.floor(width * length * trappedTilesProportion);
         ArrayList<Integer> trappedTilesPositions = randomTrappedTilesPositons(nbTrappedTiles);
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < length; j++) {
                 if (trappedTilesPositions.contains(i * width + j)) {
+                    this.nbTrappedTiles++;
                     tiles.put(new Tile(true, false, 0, false), null);
+
                 } else {
+                    nbFreeTiles++;
                     tiles.put(new Tile(false, false, 0, false), null);
                 }
             }
         }
     }
-    
-    public Board(int nbTrappedTiles) {
+
+    public Board(int length, int width, int nbTrappedTiles) {
         this.gameOver = false;
         tiles = new HashMap<>();
-        int width = 20;
-        int length = 20;
         ArrayList<Integer> trappedTilesPositions = randomTrappedTilesPositons(nbTrappedTiles);
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < length; j++) {
                 if (trappedTilesPositions.contains(i * width + j)) {
+                    this.nbTrappedTiles++;
                     tiles.put(new Tile(true, false, 0, false), null);
                 } else {
+                    nbFreeTiles++;
                     tiles.put(new Tile(false, false, 0, false), null);
                 }
             }
@@ -99,19 +107,38 @@ public class Board extends Observable {
         return gameOver;
     }
 
+    public boolean isWin() {
+        return win;
+    }
+
+    public int getNbTrappedTiles() {
+        return nbTrappedTiles;
+    }
+
     private void check() {
+        int i = 0;
         for (Map.Entry<Tile, ArrayList<Tile>> tile : tiles.entrySet()) {
-            if (tile.getKey().isTrapped() && tile.getKey().isVisible()) {
-                gameOver = true;
-                discoverTrappedTiles();
+            if (tile.getKey().isVisible()) {
+                if (tile.getKey().isTrapped()) {
+                    gameOver = true;
+                    discoverTrappedTiles();
+                } else {
+                    i++;
+                }
+                if (i == nbFreeTiles) {
+                    gameOver = true;
+                    win = true;
+                }
             }
         }
     }
-    
+
     private void discoverTrappedTiles() {
         ArrayList<Tile> trappedTiles = new ArrayList<>();
-        for (Map.Entry<Tile, ArrayList<Tile>> tile : tiles.entrySet()){
-            if (tile.getKey().isTrapped()) tile.getKey().setVisible(true);
+        for (Map.Entry<Tile, ArrayList<Tile>> tile : tiles.entrySet()) {
+            if (tile.getKey().isTrapped()) {
+                tile.getKey().setVisible(true);
+            }
         }
     }
 
