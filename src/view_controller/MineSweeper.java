@@ -53,21 +53,21 @@ import model.Tile;
  */
 public class MineSweeper extends Application {
 
-    private static final int TILE_SIZE = 30;
-    private HashMap<Button, Tile> buttons;
-    private ArrayList<ArrayList<Pair>> grid;
-    private GridPane gPane;
-    private BorderPane border;
-    private GridPane gPaneScore;
-    private Label clock;
-    private ExecutorService pool;
-    private Timeline timeline;
-    private Date startDate;
-    private ImageView emojiView;
-    private Board board;
-    private Scene scene;
-    private int width;
-    private int height;
+    protected static final int TILE_SIZE = 30;
+    protected HashMap<Node, Tile> buttons;
+    protected ArrayList<ArrayList<Pair>> grid;
+    protected GridPane gPane;
+    protected BorderPane border;
+    protected GridPane gPaneScore;
+    protected Label clock;
+    protected ExecutorService pool;
+    protected Timeline timeline;
+    protected Date startDate;
+    protected ImageView emojiView;
+    protected Board board;
+    protected Scene scene;
+    protected int width;
+    protected int height;
 
     @Override
     public void start(Stage primaryStage) {
@@ -108,7 +108,7 @@ public class MineSweeper extends Application {
      * @param b
      * @return
      */
-    private Tile getButtonTile(Button b) {
+    protected Tile getButtonTile(Button b) {
         for (ArrayList<Pair> al : grid) {
             for (Pair<Button, Tile> p : al) {
                 if (p.getKey() == b) {
@@ -123,7 +123,7 @@ public class MineSweeper extends Application {
      *
      * @param @return
      */
-    private Button getTileButton(Tile t) {
+    protected Button getTileButton(Tile t) {
         for (ArrayList<Pair> al : grid) {
             for (Pair<Button, Tile> p : al) {
                 if (p.getValue() == t) {
@@ -134,7 +134,7 @@ public class MineSweeper extends Application {
         return null;
     }
 
-    private Pair<Integer, Integer> getCoordinatesButton(Button b) {
+    protected Pair<Integer, Integer> getCoordinatesButton(Button b) {
         int x = 0;
         int y = 0;
         for (ArrayList<Pair> al : grid) {
@@ -149,7 +149,7 @@ public class MineSweeper extends Application {
         return new Pair<>(-1, -1);
     }
 
-    private Pair<Integer, Integer> getCoordinatesTile(Tile t) {
+    protected Pair<Integer, Integer> getCoordinatesTile(Tile t) {
         int i = 0;
         int j = 0;
         for (ArrayList<Pair> al : grid) {
@@ -165,7 +165,7 @@ public class MineSweeper extends Application {
         return new Pair<>(-1, -1);
     }
 
-    private Tile getTile(int x, int y) {
+    protected Tile getTile(int x, int y) {
         int i = 0;
         int j = 0;
         for (ArrayList<Pair> al : grid) {
@@ -181,7 +181,7 @@ public class MineSweeper extends Application {
         return null;
     }
 
-    private ArrayList<Tile> getTileNeighbours(Tile t) {
+    protected ArrayList<Tile> getTileNeighbours(Tile t) {
         ArrayList<Tile> neighbours = new ArrayList<>();
         Pair<Integer, Integer> coord = getCoordinatesTile(t);
         for (int j = -1; j < 2; j++) {
@@ -197,7 +197,7 @@ public class MineSweeper extends Application {
         return neighbours;
     }
 
-    private void initMenu(Stage primaryStage) {
+    protected void initMenu(Stage primaryStage) {
         MenuBar menuBar = new MenuBar();
         Menu menuFile = new Menu("Fichier");
         MenuItem reset = new MenuItem("Recommencer");
@@ -224,7 +224,7 @@ public class MineSweeper extends Application {
         border.setTop(menuBar);
     }
 
-    private int[] getPopupValues(Stage primaryStage, String... fields) {
+    protected int[] getPopupValues(Stage primaryStage, String... fields) {
         final Stage dialog = new Stage();
         int[] res = new int[fields.length];
         dialog.initModality(Modality.APPLICATION_MODAL);
@@ -265,7 +265,7 @@ public class MineSweeper extends Application {
         return res;
     }
 
-    private void initGame(Stage primaryStage, int nbTrappedCells, int width, int height) {
+    protected void initGame(Stage primaryStage, int nbTrappedCells, int width, int height) {
         
         // gestion du placement (permet de palcer les composants des scores)
         gPaneScore = new GridPane();
@@ -323,7 +323,7 @@ public class MineSweeper extends Application {
         board.update();
     }
 
-    private void initGrid() {
+    protected void initGrid() {
         int column = 0;
         int row = 0;
 
@@ -439,7 +439,7 @@ public class MineSweeper extends Application {
         clock.setStyle("-fx-font-size: " + TILE_SIZE + ";");
     }
 
-    private void initObserver() {
+    protected void initObserver() {
         board.addObserver(new Observer() {
             @Override
             public void update(Observable o, Object arg) {
