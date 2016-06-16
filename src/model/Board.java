@@ -20,17 +20,17 @@ public class Board extends Observable {
     private int nbTrappedTiles;
     private int nbFreeTiles;
 
-    public Board(int length, int width, double trappedTilesProportion) {
+    public Board(int width, int height, double trappedTilesProportion) {
         this.nbTrappedTiles = 0;
         this.nbFreeTiles = 0;
         this.gameOver = false;
         this.win = false;
         this.tiles = new HashMap<>();
-        int nbTrappedTiles = (int) Math.floor(width * length * trappedTilesProportion);
+        int nbTrappedTiles = (int) Math.floor(height * width * trappedTilesProportion);
         ArrayList<Integer> trappedTilesPositions = randomTrappedTilesPositons(nbTrappedTiles);
-        for (int i = 0; i < width; i++) {
-            for (int j = 0; j < length; j++) {
-                if (trappedTilesPositions.contains(i * width + j)) {
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                if (trappedTilesPositions.contains(i * height + j)) {
                     this.nbTrappedTiles++;
                     tiles.put(new Tile(true, false, 0, false), null);
 
@@ -42,13 +42,13 @@ public class Board extends Observable {
         }
     }
 
-    public Board(int length, int width, int nbTrappedTiles) {
+    public Board(int width, int height, int nbTrappedTiles) {
         this.gameOver = false;
         tiles = new HashMap<>();
         ArrayList<Integer> trappedTilesPositions = randomTrappedTilesPositons(nbTrappedTiles);
-        for (int i = 0; i < width; i++) {
-            for (int j = 0; j < length; j++) {
-                if (trappedTilesPositions.contains(i * width + j)) {
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                if (trappedTilesPositions.contains(i * height + j)) {
                     this.nbTrappedTiles++;
                     tiles.put(new Tile(true, false, 0, false), null);
                 } else {
@@ -128,17 +128,23 @@ public class Board extends Observable {
                 if (i == nbFreeTiles) {
                     gameOver = true;
                     win = true;
+                    setAllVisible();
                 }
             }
         }
     }
 
     private void discoverTrappedTiles() {
-        ArrayList<Tile> trappedTiles = new ArrayList<>();
         for (Map.Entry<Tile, ArrayList<Tile>> tile : tiles.entrySet()) {
             if (tile.getKey().isTrapped()) {
                 tile.getKey().setVisible(true);
             }
+        }
+    }
+    
+    private void setAllVisible(){
+        for (Map.Entry<Tile, ArrayList<Tile>> tile : tiles.entrySet()) {
+            tile.getKey().setVisible(true);
         }
     }
 

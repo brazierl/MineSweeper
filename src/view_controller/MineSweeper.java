@@ -81,7 +81,7 @@ public class MineSweeper extends Application {
         initGame(primaryStage, 0, 5, 5);
 
         scene = new Scene(border);
-        
+
         primaryStage.setTitle("Démineur");
         primaryStage.setScene(scene);
         primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
@@ -157,10 +157,10 @@ public class MineSweeper extends Application {
                 if (p.getValue() == t) {
                     return new Pair<>(i, j);
                 }
-                i++;
+                j++;
             }
-            j++;
-            i = 0;
+            i++;
+            j = 0;
         }
         return new Pair<>(-1, -1);
     }
@@ -173,10 +173,10 @@ public class MineSweeper extends Application {
                 if (x == i && y == j) {
                     return p.getValue();
                 }
-                i++;
+                j++;
             }
-            j++;
-            i = 0;
+            i++;
+            j = 0;
         }
         return null;
     }
@@ -186,7 +186,7 @@ public class MineSweeper extends Application {
         Pair<Integer, Integer> coord = getCoordinatesTile(t);
         for (int j = -1; j < 2; j++) {
             for (int i = -1; i < 2; i++) {
-                if (coord.getKey() + i >= 0 && coord.getValue() + j >= 0 && coord.getKey() + i < grid.size() && coord.getValue() + j < grid.get(0).size()) {
+                if (coord.getKey() + i >= 0 && coord.getValue() + j >= 0 && coord.getKey() + i < height && coord.getValue() + j < width) {
                     Tile currT = getTile(coord.getKey() + i, coord.getValue() + j);
                     if (!(i == 0 && j == 0)) {
                         neighbours.add(currT);
@@ -212,7 +212,7 @@ public class MineSweeper extends Application {
         MenuItem gridSize = new MenuItem("Taille de la grille");
         gridSize.setOnAction((ActionEvent t) -> {
             int[] res = getPopupValues(primaryStage, "Entrez la hauteur : ", "Entrez la largeur : ");
-            initGame(primaryStage, board.getNbTrappedTiles(), res[0], res[1]);
+            initGame(primaryStage, board.getNbTrappedTiles(), res[1], res[0]);
         });
 
         game.getItems().addAll(nbMine, gridSize);
@@ -266,7 +266,7 @@ public class MineSweeper extends Application {
     }
 
     protected void initGame(Stage primaryStage, int nbTrappedCells, int width, int height) {
-        
+
         // gestion du placement (permet de palcer les composants des scores)
         gPaneScore = new GridPane();
 
@@ -283,7 +283,7 @@ public class MineSweeper extends Application {
             this.width = width;
             this.height = height;
         }
-        
+
         primaryStage.setWidth((width + 1) * TILE_SIZE);
         primaryStage.setHeight((height + 5) * TILE_SIZE);
 
@@ -299,12 +299,12 @@ public class MineSweeper extends Application {
         timeline = new Timeline(
                 new KeyFrame(Duration.seconds(1),
                         new EventHandler<ActionEvent>() {
-                    @Override
-                    public void handle(ActionEvent event) {
-                        Date date = new Date(new Date().getTime() - startDate.getTime());;
-                        clock.setText(dateFormat.format(date));
-                    }
-                }
+                            @Override
+                            public void handle(ActionEvent event) {
+                                Date date = new Date(new Date().getTime() - startDate.getTime());;
+                                clock.setText(dateFormat.format(date));
+                            }
+                        }
                 )
         );
 
@@ -327,8 +327,6 @@ public class MineSweeper extends Application {
         int column = 0;
         int row = 0;
 
-        int dimension = (int) Math.sqrt(board.getTiles().size()) - 1;
-
         // création des bouton et placement dans la grille
         buttons = new HashMap<>();
         ArrayList<Pair> rowList = new ArrayList<>();
@@ -336,25 +334,26 @@ public class MineSweeper extends Application {
         for (Map.Entry<Tile, ArrayList<Tile>> tile : board.getTiles().entrySet()) {
             Button b = new Button();
             b.setMinSize(TILE_SIZE, TILE_SIZE);
+            b.setMaxSize(TILE_SIZE, TILE_SIZE);
 
             gPane.add(b, column++, row);
 
             // évolution du smiley lors d'un clic
             /*b.setOnMousePressed(new EventHandler<MouseEvent>() {
-                @Override
-                public void handle(MouseEvent event) {
-                    emojiView = new ImageView("/images/Clic.PNG");
-                    board.update();
-                }
-            });
+             @Override
+             public void handle(MouseEvent event) {
+             emojiView = new ImageView("/images/Clic.PNG");
+             board.update();
+             }
+             });
 
-            b.setOnMouseReleased(new EventHandler<MouseEvent>() {
-                @Override
-                public void handle(MouseEvent event) {
-                    emojiView = new ImageView("/images/smiley.PNG");
-                    board.update();
-                }
-            });*/
+             b.setOnMouseReleased(new EventHandler<MouseEvent>() {
+             @Override
+             public void handle(MouseEvent event) {
+             emojiView = new ImageView("/images/smiley.PNG");
+             board.update();
+             }
+             });*/
             b.setOnMouseClicked(new EventHandler<MouseEvent>() {
                 @Override
                 public void handle(MouseEvent event) {
@@ -401,7 +400,8 @@ public class MineSweeper extends Application {
             Pair<Button, Tile> couple = new Pair<>(b, tile.getKey());
             rowList.add(couple);
 
-            if (column > dimension) {
+            
+            if (column >= width) {
                 grid.add(rowList);
                 rowList = new ArrayList<>();
                 column = 0;
@@ -479,8 +479,10 @@ public class MineSweeper extends Application {
                         }
                     }
                     if (t.isFlagged()) {
-                        Image imageFlag = new Image("images/flag.png");
-                        b.setGraphic(new ImageView(imageFlag));
+                        ImageView flagView = new ImageView("images/flag.png");
+                        flagView.setFitHeight(TILE_SIZE/2);
+                        flagView.setFitWidth(TILE_SIZE/2);
+                        b.setGraphic(flagView);
                     }
                     if (board.isGameOver()) {
                         gPane.setDisable(true);
