@@ -54,7 +54,7 @@ import model.Tile;
  *
  * @author p1509019
  */
-public class MineSweeper extends Application{
+public class MineSweeper extends Application {
 
     protected static final int TILE_SIZE = 30;
     protected HashMap<Node, Tile> buttons;
@@ -82,50 +82,41 @@ public class MineSweeper extends Application{
         // gestion du placement (permet de placer les scores en haut, et GridPane gPane au centre)
         border = new BorderPane();
 
-        // TimeLine pour animation du minuteur
-        DateFormat dateFormat = new SimpleDateFormat("mm:ss");
-        timeline = new Timeline(
-                new KeyFrame(Duration.seconds(1),
-                        new EventHandler<ActionEvent>() {
-                            @Override
-                            public void handle(ActionEvent event) {
-                                Date date;
-                                if (timeout > 0) {
-                                    stopDate = new Date(startDate.getTime() + new Date(timeout * 1000).getTime());
-                                    date = new Date(stopDate.getTime() + 1000 - new Date().getTime());
-                                    if (stopDate.getTime() - new Date().getTime() <= 0) {
-                                        board.setGameOver(true);
-                                        Platform.runLater(new Runnable() {
-                                            @Override
-                                            public void run() {
-                                                board.update();
-                                            }
-                                        });
-                                    }
-                                } else {
-                                    date = new Date(new Date().getTime() - startDate.getTime());
-                                }
-                                clock.setText(dateFormat.format(date));
-                            }
-                        }
-                )
-        );
+        // Initialisation du timeline qui gère le minuteur
+        initTimer();
 
-        // Initiation du jeu avec une board et le timer
-        initGame(primaryStage, 0, 5, 5);
+        // Initiation du jeu avec une board apr défaut
+        initGame(primaryStage, 0, 10, 10);
 
         scene = new Scene(border);
 
-        primaryStage.setTitle("Démineur");
-        primaryStage.setScene(scene);
-        primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+        // Création d'un controleur pour les saisies clavier
+        scene.setOnKeyPressed(new EventHandler<KeyEvent>() {
+
             @Override
-            public void handle(WindowEvent event) {
-                Platform.exit();
-                System.exit(0);
+            public void handle(KeyEvent t) {
+                if (t.getCode().equals(KeyCode.F2)||(t.getCode().equals(KeyCode.N)&&t.isControlDown())) { // F2 ou ctrl + n pour recommencer
+                    initGame(primaryStage, board.getNbTrappedTiles(), width, height);
+                }
             }
         });
-        primaryStage.setResizable(false);
+
+        // Initialisation de la fenètre javafx
+        primaryStage.setTitle("Démineur");
+        primaryStage.setScene(scene);
+
+        primaryStage.setOnCloseRequest(
+                new EventHandler<WindowEvent>() {
+                    @Override
+                    public void handle(WindowEvent event
+                    ) {
+                        Platform.exit();
+                        System.exit(0);
+                    }
+                }
+        );
+        primaryStage.setResizable(
+                false);
         primaryStage.show();
     }
 
@@ -235,7 +226,7 @@ public class MineSweeper extends Application{
         MenuBar menuBar = new MenuBar();
         // Menu fichier pour la gestion de la partie
         Menu menuFile = new Menu("Fichier");
-        MenuItem reset = new MenuItem("Recommencer");
+        MenuItem reset = new MenuItem("Recommencer (F2)");
         reset.setOnAction((ActionEvent t) -> {
             initGame(primaryStage, board.getNbTrappedTiles(), width, height);
         });
@@ -352,7 +343,6 @@ public class MineSweeper extends Application{
         startDate = new Date();
 
         timeline.setCycleCount(Animation.INDEFINITE);
-        timeline.play();
 
         // Création des menus
         initMenu(primaryStage);
@@ -381,22 +371,6 @@ public class MineSweeper extends Application{
 
             gPane.add(b, column++, row);
 
-            // évolution du smiley lors d'un clic
-            /*b.setOnMousePressed(new EventHandler<MouseEvent>() {
-             @Override
-             public void handle(MouseEvent event) {
-             emojiView = new ImageView("/images/Clic.PNG");
-             board.update();
-             }
-             });
-
-             b.setOnMouseReleased(new EventHandler<MouseEvent>() {
-             @Override
-             public void handle(MouseEvent event) {
-             emojiView = new ImageView("/images/smiley.PNG");
-             board.update();
-             }
-             });*/
             b.setOnMouseClicked(new EventHandler<MouseEvent>() {
                 @Override
                 public void handle(MouseEvent event) {
@@ -545,5 +519,36 @@ public class MineSweeper extends Application{
                 }
             }
         });
-    }    
+    }
+
+    private void initTimer() {
+        // TimeLine pour animation du minuteur
+        DateFormat dateFormat = new SimpleDateFormat("mm:ss");
+        timeline = new Timeline(
+                new KeyFrame(Duration.seconds(1),
+                        new EventHandler<ActionEvent>() {
+                            @Override
+                            public void handle(ActionEvent event) {
+                                Date date;
+                                if (timeout > 0) {
+                                    stopDate = new Date(startDate.getTime() + new Date(timeout * 1000).getTime());
+                                    date = new Date(stopDate.getTime() + 1000 - new Date().getTime());
+                                    if (stopDate.getTime() - new Date().getTime() <= 0) {
+                                        board.setGameOver(true);
+                                        Platform.runLater(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                board.update();
+                                            }
+                                        });
+                                    }
+                                } else {
+                                    date = new Date(new Date().getTime() - startDate.getTime());
+                                }
+                                clock.setText(dateFormat.format(date));
+                            }
+                        }
+                )
+        );
+    }
 }
