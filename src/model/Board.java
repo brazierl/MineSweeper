@@ -148,4 +148,8 @@ public class Board extends Observable {
         }
     }
 
+    public void setGameOver(boolean gameOver) {
+        this.gameOver = gameOver;
+    }
+
 }

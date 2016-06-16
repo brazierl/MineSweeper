@@ -5,6 +5,9 @@
  */
 package view_controller;
 
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -51,7 +54,7 @@ import model.Tile;
  *
  * @author p1509019
  */
-public class MineSweeper extends Application {
+public class MineSweeper extends Application{
 
     protected static final int TILE_SIZE = 30;
     protected HashMap<Node, Tile> buttons;
@@ -63,6 +66,8 @@ public class MineSweeper extends Application {
     protected ExecutorService pool;
     protected Timeline timeline;
     protected Date startDate;
+    protected Date stopDate;
+    protected int timeout;
     protected ImageView emojiView;
     protected Board board;
     protected Scene scene;
@@ -76,6 +81,35 @@ public class MineSweeper extends Application {
 
         // gestion du placement (permet de placer les scores en haut, et GridPane gPane au centre)
         border = new BorderPane();
+
+        // TimeLine pour animation du minuteur
+        DateFormat dateFormat = new SimpleDateFormat("mm:ss");
+        timeline = new Timeline(
+                new KeyFrame(Duration.seconds(1),
+                        new EventHandler<ActionEvent>() {
+                            @Override
+                            public void handle(ActionEvent event) {
+                                Date date;
+                                if (timeout > 0) {
+                                    stopDate = new Date(startDate.getTime() + new Date(timeout * 1000).getTime());
+                                    date = new Date(stopDate.getTime() + 1000 - new Date().getTime());
+                                    if (stopDate.getTime() - new Date().getTime() <= 0) {
+                                        board.setGameOver(true);
+                                        Platform.runLater(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                board.update();
+                                            }
+                                        });
+                                    }
+                                } else {
+                                    date = new Date(new Date().getTime() - startDate.getTime());
+                                }
+                                clock.setText(dateFormat.format(date));
+                            }
+                        }
+                )
+        );
 
         // Initiation du jeu avec une board et le timer
         initGame(primaryStage, 0, 5, 5);
@@ -199,10 +233,11 @@ public class MineSweeper extends Application {
 
     protected void initMenu(Stage primaryStage) {
         MenuBar menuBar = new MenuBar();
+        // Menu fichier pour la gestion de la partie
         Menu menuFile = new Menu("Fichier");
         MenuItem reset = new MenuItem("Recommencer");
         reset.setOnAction((ActionEvent t) -> {
-            initGame(primaryStage, 0, 0, 0);
+            initGame(primaryStage, board.getNbTrappedTiles(), width, height);
         });
         Menu game = new Menu("Partie");
         MenuItem nbMine = new MenuItem("Nombre de mines");
@@ -214,12 +249,27 @@ public class MineSweeper extends Application {
             int[] res = getPopupValues(primaryStage, "Entrez la hauteur : ", "Entrez la largeur : ");
             initGame(primaryStage, board.getNbTrappedTiles(), res[1], res[0]);
         });
+        // Menu challenge pour ajouter des contraintes
+        Menu menuChallenge = new Menu("Challenge");
+        MenuItem temps = new MenuItem("Définir un temps limite");
+        temps.setOnAction((ActionEvent t) -> {
+            int[] res = getPopupValues(primaryStage, "Entrez un temps \nlimite (en minutes) : ", "Entrez un temps \nlimite (en secondes) : ");
+            initGame(primaryStage, board.getNbTrappedTiles(), 0, 0);
+            if (res[0] > 0 || res[1] > 0) {
+                timeout = res[0] * 60 + res[1];
+            } else {
+                timeout = 0;
+            }
+
+        });
 
         game.getItems().addAll(nbMine, gridSize);
 
         menuFile.getItems().addAll(reset, game);
 
-        menuBar.getMenus().add(menuFile);
+        menuChallenge.getItems().addAll(temps);
+
+        menuBar.getMenus().addAll(menuFile, menuChallenge);
 
         border.setTop(menuBar);
     }
@@ -242,20 +292,25 @@ public class MineSweeper extends Application {
             gpane.add(tf, 1, i);
             i++;
         }
-        Button b = new Button("Ok");
+        Button b = new Button("Valider");
         b.setOnMouseClicked(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent event) {
                 int j = 0;
                 for (Node n : gpane.getChildren()) {
                     if (n instanceof TextField) {
-                        res[j] = Integer.parseInt(((TextField) n).getText());
+                        try {
+                            res[j] = Integer.parseInt(((TextField) n).getText());
+                        } catch (Exception ex) {
+                            res[j] = 0;
+                        }
                         j++;
                     }
                 }
                 dialog.close();
             }
         });
+        b.setDefaultButton(true);
         gpane.add(b, 1, i);
         dialogVbox.getChildren().add(gpane);
         dialogVbox.setAlignment(Pos.CENTER);
@@ -295,18 +350,6 @@ public class MineSweeper extends Application {
 
         // TimeLine gérant l'évolution de l'horloge
         startDate = new Date();
-        DateFormat dateFormat = new SimpleDateFormat("mm:ss");
-        timeline = new Timeline(
-                new KeyFrame(Duration.seconds(1),
-                        new EventHandler<ActionEvent>() {
-                            @Override
-                            public void handle(ActionEvent event) {
-                                Date date = new Date(new Date().getTime() - startDate.getTime());;
-                                clock.setText(dateFormat.format(date));
-                            }
-                        }
-                )
-        );
 
         timeline.setCycleCount(Animation.INDEFINITE);
         timeline.play();
@@ -400,7 +443,6 @@ public class MineSweeper extends Application {
             Pair<Button, Tile> couple = new Pair<>(b, tile.getKey());
             rowList.add(couple);
 
-            
             if (column >= width) {
                 grid.add(rowList);
                 rowList = new ArrayList<>();
@@ -480,22 +522,28 @@ public class MineSweeper extends Application {
                     }
                     if (t.isFlagged()) {
                         ImageView flagView = new ImageView("images/flag.png");
-                        flagView.setFitHeight(TILE_SIZE/2);
-                        flagView.setFitWidth(TILE_SIZE/2);
+                        flagView.setFitHeight(TILE_SIZE / 2);
+                        flagView.setFitWidth(TILE_SIZE / 2);
                         b.setGraphic(flagView);
                     }
-                    if (board.isGameOver()) {
-                        gPane.setDisable(true);
-                        gPane.setStyle("-fx-opacity: 1.0;");
-                        timeline.stop();
-                        if (board.isWin()) {
-                            emojiView.setImage(new Image("/images/victory.PNG"));
-                        } else {
-                            emojiView.setImage(new Image("/images/lost.PNG"));
-                        }
+                }
+                if (board.isGameOver()) {
+                    gPane.setDisable(true);
+                    gPane.setStyle("-fx-opacity: 1.0;");
+                    if (board.isWin()) {
+                        emojiView.setImage(new Image("/images/victory.PNG"));
+                    } else {
+                        emojiView.setImage(new Image("/images/lost.PNG"));
                     }
+                    Platform.runLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            timeline.stop();
+                        }
+                    });
+
                 }
             }
         });
-    }
+    }    
 }
