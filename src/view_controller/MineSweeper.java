@@ -73,6 +73,7 @@ public class MineSweeper extends Application {
     protected Scene scene;
     protected int width;
     protected int height;
+    protected boolean firstClic;
 
     @Override
     public void start(Stage primaryStage) {
@@ -95,7 +96,7 @@ public class MineSweeper extends Application {
 
             @Override
             public void handle(KeyEvent t) {
-                if (t.getCode().equals(KeyCode.F2)||(t.getCode().equals(KeyCode.N)&&t.isControlDown())) { // F2 ou ctrl + n pour recommencer
+                if (t.getCode().equals(KeyCode.F2) || (t.getCode().equals(KeyCode.N) && t.isControlDown())) { // F2 ou ctrl + n pour recommencer
                     initGame(primaryStage, board.getNbTrappedTiles(), width, height);
                 }
             }
@@ -312,7 +313,8 @@ public class MineSweeper extends Application {
     }
 
     protected void initGame(Stage primaryStage, int nbTrappedCells, int width, int height) {
-
+        firstClic = true;
+        
         // gestion du placement (permet de palcer les composants des scores)
         gPaneScore = new GridPane();
 
@@ -321,6 +323,8 @@ public class MineSweeper extends Application {
 
         // horloge
         clock = new Label();
+        
+        clock.setText("00:00");
 
         if (width == 0 || height == 0) {
             width = this.width;
@@ -340,9 +344,8 @@ public class MineSweeper extends Application {
         }
 
         // TimeLine gérant l'évolution de l'horloge
-        startDate = new Date();
         timeline.setCycleCount(Animation.INDEFINITE);
-        timeline.play();
+        timeline.stop();
 
         // Création des menus
         initMenu(primaryStage);
@@ -374,6 +377,11 @@ public class MineSweeper extends Application {
             b.setOnMouseClicked(new EventHandler<MouseEvent>() {
                 @Override
                 public void handle(MouseEvent event) {
+                    if (firstClic) {
+                        startDate = new Date();
+                        timeline.play();
+                        firstClic = false;
+                    }
                     // Right Clic
                     if (event.getButton().equals(MouseButton.PRIMARY)) {
                         buttons.get(b).clic(Tile.DISCOVER);
@@ -381,7 +389,7 @@ public class MineSweeper extends Application {
                         Runnable rDisco = new Runnable() {
                             @Override
                             public void run() {
-                                board.discover(buttons.get(b));
+                                buttons.get(b).discover(board);
                                 System.out.println("rDisco : thread " + Thread.currentThread().getName());
                                 Platform.runLater(new Runnable() {
                                     @Override
@@ -502,6 +510,7 @@ public class MineSweeper extends Application {
                     }
                 }
                 if (board.isGameOver()) {
+                    firstClic = true;
                     gPane.setDisable(true);
                     gPane.setStyle("-fx-opacity: 1.0;");
                     if (board.isWin()) {

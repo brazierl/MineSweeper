@@ -5,6 +5,8 @@
  */
 package model;
 
+import java.util.ArrayList;
+
 /**
  *
  * @author p1509019
@@ -68,6 +70,23 @@ public class Tile {
                 break;
             default:
                 break;
+        }
+    }
+
+    public void discover(Board board) {
+        for (Tile neighbour : board.getTiles().get(this)) {
+            if (neighbour.isTrapped()) {
+                this.setNbTrappedNeighbours(this.getNbTrappedNeighbours() + 1);
+            }
+        }
+        this.setVisible(true);
+        if (this.getNbTrappedNeighbours() == 0 && !this.isTrapped()) {
+            ArrayList<Tile> neighbours = board.getTiles().get(this);
+            for (Tile neighbour : neighbours) {
+                if (!neighbour.isVisible()) {
+                    neighbour.discover(board);
+                }
+            }
         }
     }
 

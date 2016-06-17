@@ -77,24 +77,6 @@ public class Board extends Observable {
         return trappedTilesPositions;
     }
 
-    public void discover(Tile tile) {
-        for (Tile neighbour : tiles.get(tile)) {
-            if (neighbour.isTrapped()) {
-                tile.setNbTrappedNeighbours(tile.getNbTrappedNeighbours() + 1);
-            }
-        }
-
-        tile.setVisible(true);
-
-        if (tile.getNbTrappedNeighbours() == 0 && !tile.isTrapped()) {
-            ArrayList<Tile> neighbours = tiles.get(tile);
-            for (Tile neighbour : neighbours) {
-                if (!neighbour.isVisible()) {
-                    discover(neighbour);
-                }
-            }
-        }
-    }
 
     public void update() {
         check();
