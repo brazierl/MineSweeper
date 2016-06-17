@@ -341,8 +341,8 @@ public class MineSweeper extends Application {
 
         // TimeLine gérant l'évolution de l'horloge
         startDate = new Date();
-
         timeline.setCycleCount(Animation.INDEFINITE);
+        timeline.play();
 
         // Création des menus
         initMenu(primaryStage);
