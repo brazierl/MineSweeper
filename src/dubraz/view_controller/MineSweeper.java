@@ -3,11 +3,8 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package view_controller;
+package dubraz.view_controller;
 
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -25,7 +22,6 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -46,8 +42,8 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
 import javafx.util.Pair;
-import model.Board;
-import model.Tile;
+import dubraz.model.Board;
+import dubraz.model.Tile;
 
 /**
  * Vue/Contrôleur
@@ -55,24 +51,78 @@ import model.Tile;
  * @author p1509019
  */
 public class MineSweeper extends Application {
-
+    
+    /**
+     * Taille d'une case par défault
+     */
     protected static final int TILE_SIZE = 30;
+    /**
+     * Map liant un boutton et une ccase (Tile)
+     */
     protected HashMap<Node, Tile> buttons;
+    /**
+     * Liste de liste représentant la grille
+     */
     protected ArrayList<ArrayList<Pair>> grid;
+    /**
+     * Objet visuel de grille pour contenir les bouttons
+     */
     protected GridPane gPane;
+    /**
+     * Composant qui place les objets dans la fenêtre
+     */
     protected BorderPane border;
+    /**
+     * Grille pour le placement de l'horloge et de l'emoji
+     */
     protected GridPane gPaneScore;
+    /**
+     * Label de l'horloge
+     */
     protected Label clock;
+    /**
+     * Pool de thread
+     */
     protected ExecutorService pool;
+    /**
+     * Timeline de l'horloge : Un evenement se déclanche toute les secondes pour raffraichir l'horloge
+     */
     protected Timeline timeline;
+    /**
+     * Date de début du timer
+     */
     protected Date startDate;
+    /**
+     * Date de fin du timer si le challenge de temps est lancé
+     */
     protected Date stopDate;
+    /**
+     * Durée du timer pour le challenge de temps
+     */
     protected int timeout;
+    /**
+     * Image de l'émoji
+     */
     protected ImageView emojiView;
+    /**
+     * Plateau/Modèle associé à la vue
+     */
     protected Board board;
+    /**
+     * Scène principale
+     */
     protected Scene scene;
+    /**
+     * Longueur de la grille
+     */
     protected int width;
+    /**
+     * Hauteur de la grille
+     */
     protected int height;
+    /**
+     * Test si le jeu à déjà commencé
+     */
     protected boolean firstClic;
 
     @Override
@@ -131,8 +181,8 @@ public class MineSweeper extends Application {
     /**
      * Get the associate tile of a button.
      *
-     * @param b
-     * @return
+     * @param b a button
+     * @return a Tile
      */
     protected Tile getButtonTile(Button b) {
         for (ArrayList<Pair> al : grid) {
@@ -146,8 +196,10 @@ public class MineSweeper extends Application {
     }
 
     /**
-     *
-     * @param @return
+     * Get the associate button of a Tile
+     * 
+     * @param t, a tile 
+     * @return a button
      */
     protected Button getTileButton(Tile t) {
         for (ArrayList<Pair> al : grid) {
@@ -160,6 +212,11 @@ public class MineSweeper extends Application {
         return null;
     }
 
+    /**
+     * Get a button coordinates
+     * @param b a button
+     * @return a pair of coordinates
+     */
     protected Pair<Integer, Integer> getCoordinatesButton(Button b) {
         int x = 0;
         int y = 0;
@@ -175,6 +232,11 @@ public class MineSweeper extends Application {
         return new Pair<>(-1, -1);
     }
 
+    /**
+     * Get a tile coordinates
+     * @param t a Tile
+     * @return a pair of coordinates
+     */
     protected Pair<Integer, Integer> getCoordinatesTile(Tile t) {
         int i = 0;
         int j = 0;
@@ -191,6 +253,12 @@ public class MineSweeper extends Application {
         return new Pair<>(-1, -1);
     }
 
+    /**
+     * Get a tile from coordinates
+     * @param x width
+     * @param y height
+     * @return a TIle
+     */
     protected Tile getTile(int x, int y) {
         int i = 0;
         int j = 0;
@@ -206,7 +274,11 @@ public class MineSweeper extends Application {
         }
         return null;
     }
-
+    /**
+     * Get neighbours of a tile during grid creation
+     * @param t a Tile
+     * @return List of tile neighbours
+     */
     protected ArrayList<Tile> getTileNeighbours(Tile t) {
         ArrayList<Tile> neighbours = new ArrayList<>();
         Pair<Integer, Integer> coord = getCoordinatesTile(t);
@@ -222,7 +294,10 @@ public class MineSweeper extends Application {
         }
         return neighbours;
     }
-
+    /**
+     * Initialize the menus 
+     * @param primaryStage 
+     */
     protected void initMenu(Stage primaryStage) {
         MenuBar menuBar = new MenuBar();
         // Menu fichier pour la gestion de la partie
@@ -266,6 +341,12 @@ public class MineSweeper extends Application {
         border.setTop(menuBar);
     }
 
+    /**
+     * Generic function to create popups and return values entered
+     * @param primaryStage main stage 
+     * @param fields List of fields to entered
+     * @return 
+     */
     protected int[] getPopupValues(Stage primaryStage, String... fields) {
         final Stage dialog = new Stage();
         int[] res = new int[fields.length];
@@ -312,6 +393,13 @@ public class MineSweeper extends Application {
         return res;
     }
 
+    /**
+     * Main function to init the game.
+     * @param primaryStage main stage
+     * @param nbTrappedCells number of trapped cells for the Board
+     * @param width size of the grid
+     * @param height size of the grid
+     */
     protected void initGame(Stage primaryStage, int nbTrappedCells, int width, int height) {
         firstClic = true;
         
@@ -359,6 +447,9 @@ public class MineSweeper extends Application {
         board.update();
     }
 
+    /**
+     * Initialize the graphical grid into the window
+     */
     protected void initGrid() {
         int column = 0;
         int row = 0;
@@ -463,6 +554,9 @@ public class MineSweeper extends Application {
         clock.setStyle("-fx-font-size: " + TILE_SIZE + ";");
     }
 
+    /**
+     * Observer for the Board
+     */
     protected void initObserver() {
         board.addObserver(new Observer() {
             @Override
@@ -530,6 +624,9 @@ public class MineSweeper extends Application {
         });
     }
 
+    /**
+     * Initialize components for the timer
+     */
     private void initTimer() {
         // TimeLine pour animation du minuteur
         DateFormat dateFormat = new SimpleDateFormat("mm:ss");

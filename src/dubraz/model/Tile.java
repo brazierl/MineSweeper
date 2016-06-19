@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package model;
+package dubraz.model;
 
 import java.util.ArrayList;
 
@@ -13,14 +13,24 @@ import java.util.ArrayList;
  */
 public class Tile {
 
+    /**
+     * Static variables to signal the type of clic
+     */
     public final static int DISCOVER = 1;
     public final static int FLAG = 2;
+    /**
+     * true if the tile is trapped
+     */
     private boolean trapped;
+    /**
+     * true if the tile is visible
+     */
     private boolean visible;
+    
     private int nbTrappedNeighbours;
     private boolean flagged;
 
-    public Tile(boolean trapped, boolean visible, int nbNearNeighbours, boolean flagged) {
+    public Tile(boolean trapped, boolean visible, int nbTrappedNeighbours, boolean flagged) {
         this.trapped = trapped;
         this.visible = visible;
         this.nbTrappedNeighbours = nbTrappedNeighbours;
@@ -73,6 +83,10 @@ public class Tile {
         }
     }
 
+    /** 
+     * update the state of the tiles and set them visible according to the rules of the game
+     * @param board state of the board, contains the neighbours
+     */
     public void discover(Board board) {
         for (Tile neighbour : board.getTiles().get(this)) {
             if (neighbour.isTrapped()) {

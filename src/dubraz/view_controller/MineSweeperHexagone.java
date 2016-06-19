@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package view_controller;
+package dubraz.view_controller;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -30,9 +30,9 @@ import javafx.scene.shape.Polygon;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import javafx.util.Pair;
-import model.Board;
-import model.Tile;
-import static view_controller.MineSweeper.TILE_SIZE;
+import dubraz.model.Board;
+import dubraz.model.Tile;
+import static dubraz.view_controller.MineSweeper.TILE_SIZE;
 
 /**
  *

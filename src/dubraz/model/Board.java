@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package model;
+package dubraz.model;
 
 import java.util.*;
 
@@ -13,13 +13,37 @@ import java.util.*;
  */
 public class Board extends Observable {
 
+    /**
+     * Default tiles proportion in a Board
+     */
     public static final double TRAPPED_TILES_PROP = 0.15;
+    /**
+     * List of tiles in the grid with their associated neighbours
+     */
     private HashMap<Tile, ArrayList<Tile>> tiles;
+    /**
+     * true if the game is over
+     */
     private boolean gameOver;
+    /**
+     * True if the player winned the game
+     */
     private boolean win;
+    /**
+     * number of trapped tiles in the board
+     */
     private int nbTrappedTiles;
+    /**
+     * number of free tiles in the grid
+     */
     private int nbFreeTiles;
 
+    /**
+     * Constructor with a proportion of trapped tiles
+     * @param width size
+     * @param height size
+     * @param trappedTilesProportion proportion of trapped tiles in the board
+     */
     public Board(int width, int height, double trappedTilesProportion) {
         this.nbTrappedTiles = 0;
         this.nbFreeTiles = 0;
@@ -42,6 +66,12 @@ public class Board extends Observable {
         }
     }
 
+    /**
+     * Constructor with a number of trapped tiles
+     * @param width size
+     * @param height size
+     * @param nbTrappedTiles number of trapped tiles in the board
+     */
     public Board(int width, int height, int nbTrappedTiles) {
         this.gameOver = false;
         tiles = new HashMap<>();
@@ -62,7 +92,11 @@ public class Board extends Observable {
     public HashMap<Tile, ArrayList<Tile>> getTiles() {
         return tiles;
     }
-
+    /**
+     * Generate random positions for the trapped tiles
+     * @param nbTrappedTiles
+     * @return 
+     */
     private ArrayList<Integer> randomTrappedTilesPositons(int nbTrappedTiles) {
         ArrayList<Integer> trappedTilesPositions = new ArrayList<>();
         int val;
@@ -77,7 +111,9 @@ public class Board extends Observable {
         return trappedTilesPositions;
     }
 
-
+    /**
+     * Method called to update the board state and notify the observers
+     */
     public void update() {
         check();
 
@@ -97,6 +133,9 @@ public class Board extends Observable {
         return nbTrappedTiles;
     }
 
+    /**
+     * check the state of the board (if the game is over and if it is a victory)
+     */
     private void check() {
         int i = 0;
         for (Map.Entry<Tile, ArrayList<Tile>> tile : tiles.entrySet()) {
@@ -116,6 +155,9 @@ public class Board extends Observable {
         }
     }
 
+    /**
+     * set all the trapped tiles to visible when the game is over
+     */
     private void discoverTrappedTiles() {
         for (Map.Entry<Tile, ArrayList<Tile>> tile : tiles.entrySet()) {
             if (tile.getKey().isTrapped()) {
@@ -124,6 +166,9 @@ public class Board extends Observable {
         }
     }
     
+    /**
+     * set all the tiles to visible when the game is over
+     */
     private void setAllVisible(){
         for (Map.Entry<Tile, ArrayList<Tile>> tile : tiles.entrySet()) {
             tile.getKey().setVisible(true);
