@@ -61,12 +61,13 @@ public class Tile {
         return visible;
     }
 
-    public void clic(int action) {
+    public void clic(int action, Board board) {
         switch (action) {
             case Tile.DISCOVER:
                 if (!this.visible) {
                     this.flagged = false;
                     this.visible = true;
+                    this.discover(board);
                 }
                 break;
             case Tile.FLAG:

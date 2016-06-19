@@ -475,12 +475,10 @@ public class MineSweeper extends Application {
                     }
                     // Right Clic
                     if (event.getButton().equals(MouseButton.PRIMARY)) {
-                        buttons.get(b).clic(Tile.DISCOVER);
-
-                        Runnable rDisco = new Runnable() {
+                                                Runnable rDisco = new Runnable() {
                             @Override
                             public void run() {
-                                buttons.get(b).discover(board);
+                                buttons.get(b).clic(Tile.DISCOVER, board);
                                 System.out.println("rDisco : thread " + Thread.currentThread().getName());
                                 Platform.runLater(new Runnable() {
                                     @Override
@@ -497,7 +495,7 @@ public class MineSweeper extends Application {
                         Runnable rFlag = new Runnable() {
                             @Override
                             public void run() {
-                                buttons.get(b).clic(Tile.FLAG);
+                                buttons.get(b).clic(Tile.FLAG, board);
                                 System.out.println("rFlag : thread " + Thread.currentThread().getName());
                                 Platform.runLater(new Runnable() {
                                     @Override
@@ -535,7 +533,7 @@ public class MineSweeper extends Application {
         gPane.setAlignment(Pos.BOTTOM_CENTER);
 
         // Image 
-        emojiView = new ImageView("/images/smiley.PNG");
+        emojiView = new ImageView("/dubraz/images/smiley.PNG");
         emojiView.setFitHeight(TILE_SIZE);
         emojiView.setFitWidth(TILE_SIZE);
         HBox hbEmoji = new HBox();
@@ -567,7 +565,7 @@ public class MineSweeper extends Application {
                     b.setGraphic(null);
                     if (t.isVisible()) {
                         if (t.isTrapped()) {
-                            Image imageMine = new Image("images/mine.png");
+                            Image imageMine = new Image("dubraz/images/mine.png");
                             b.setGraphic(new ImageView(imageMine));
                             b.setStyle("-fx-opacity: 1.0; -fx-background-color: rgb(245,245,245);");
                         } else if (t.getNbTrappedNeighbours() != 0) {
@@ -597,7 +595,7 @@ public class MineSweeper extends Application {
                         }
                     }
                     if (t.isFlagged()) {
-                        ImageView flagView = new ImageView("images/flag.png");
+                        ImageView flagView = new ImageView("dubraz/images/flag.png");
                         flagView.setFitHeight(TILE_SIZE / 2);
                         flagView.setFitWidth(TILE_SIZE / 2);
                         b.setGraphic(flagView);
@@ -608,9 +606,9 @@ public class MineSweeper extends Application {
                     gPane.setDisable(true);
                     gPane.setStyle("-fx-opacity: 1.0;");
                     if (board.isWin()) {
-                        emojiView.setImage(new Image("/images/victory.PNG"));
+                        emojiView.setImage(new Image("/dubraz/images/victory.PNG"));
                     } else {
-                        emojiView.setImage(new Image("/images/lost.PNG"));
+                        emojiView.setImage(new Image("/dubraz/images/lost.PNG"));
                     }
                     Platform.runLater(new Runnable() {
                         @Override
